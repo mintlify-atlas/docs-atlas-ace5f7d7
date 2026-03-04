@@ -1,0 +1,200 @@
+---
+title: "Get Property Details"
+api: "GET /api/inmuebles/public-detail/{inmueble}"
+description: "Retrieve detailed information about a specific property"
+---
+
+## Overview
+
+This public endpoint returns comprehensive details about a single property, including full description, amenities, images, location data, and associated reviews.
+
+## Path Parameters
+
+<ParamField path="inmueble" type="integer" required>
+  The ID of the property to retrieve
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="integer">
+  Unique property identifier
+</ResponseField>
+
+<ResponseField name="titulo" type="string">
+  Property title/name
+</ResponseField>
+
+<ResponseField name="descripcion" type="string">
+  Detailed description of the property
+</ResponseField>
+
+<ResponseField name="tipo" type="string">
+  Property type: `departamento`, `casa`, `cuarto`, `local`, `terreno`
+</ResponseField>
+
+<ResponseField name="direccion" type="string">
+  Street address
+</ResponseField>
+
+<ResponseField name="ciudad" type="string">
+  City (typically "Ocosingo")
+</ResponseField>
+
+<ResponseField name="estado" type="string">
+  State (typically "Chiapas")
+</ResponseField>
+
+<ResponseField name="codigo_postal" type="string">
+  Postal code
+</ResponseField>
+
+<ResponseField name="precio_renta" type="decimal">
+  Monthly rent price in MXN
+</ResponseField>
+
+<ResponseField name="deposito" type="decimal">
+  Security deposit amount in MXN
+</ResponseField>
+
+<ResponseField name="tamano_m2" type="decimal">
+  Property size in square meters
+</ResponseField>
+
+<ResponseField name="habitaciones" type="integer">
+  Number of bedrooms
+</ResponseField>
+
+<ResponseField name="banos" type="integer">
+  Number of bathrooms
+</ResponseField>
+
+<ResponseField name="amenidades" type="string">
+  Comma-separated list of amenities
+</ResponseField>
+
+<ResponseField name="estatus" type="string">
+  Status: `disponible`, `rentado`, `inactivo`
+</ResponseField>
+
+<ResponseField name="latitud" type="decimal">
+  GPS latitude coordinate
+</ResponseField>
+
+<ResponseField name="longitud" type="decimal">
+  GPS longitude coordinate
+</ResponseField>
+
+<ResponseField name="video_youtube" type="string">
+  YouTube video URL for property tour
+</ResponseField>
+
+<ResponseField name="imagenes" type="array">
+  Array of image objects
+  <Expandable title="image object">
+    <ResponseField name="id" type="integer">
+      Image ID
+    </ResponseField>
+    <ResponseField name="ruta" type="string">
+      Image storage path (use with storage URL)
+    </ResponseField>
+    <ResponseField name="url" type="string">
+      Full accessible image URL
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="propietario" type="object">
+  Property owner information
+  <Expandable title="owner details">
+    <ResponseField name="id" type="integer">
+      Owner user ID
+    </ResponseField>
+    <ResponseField name="nombre" type="string">
+      Owner name
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      Owner contact email (only visible to authenticated users)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="resenas" type="array">
+  Property reviews and ratings
+</ResponseField>
+
+<ResponseField name="promedio_calificacion" type="decimal">
+  Average rating (1-5 stars)
+</ResponseField>
+
+## Examples
+
+### Request
+
+```bash cURL
+curl https://arrendaoco.com/api/inmuebles/public-detail/1
+```
+
+```javascript JavaScript
+const response = await fetch('https://arrendaoco.com/api/inmuebles/public-detail/1');
+const property = await response.json();
+```
+
+### Response
+
+```json
+{
+  "id": 1,
+  "titulo": "Departamento Amueblado Centro",
+  "descripcion": "Hermoso departamento completamente amueblado en el centro de Ocosingo",
+  "tipo": "departamento",
+  "direccion": "Calle Central 123",
+  "ciudad": "Ocosingo",
+  "estado": "Chiapas",
+  "codigo_postal": "29950",
+  "precio_renta": 3500.00,
+  "deposito": 3500.00,
+  "tamano_m2": 65.00,
+  "habitaciones": 2,
+  "banos": 1,
+  "amenidades": "Agua,Luz,Internet,Estacionamiento",
+  "estatus": "disponible",
+  "latitud": 16.9058,
+  "longitud": -92.0931,
+  "video_youtube": "https://youtube.com/watch?v=example",
+  "imagenes": [
+    {
+      "id": 1,
+      "ruta": "inmuebles/abc123.jpg",
+      "url": "https://arrendaoco.com/storage/inmuebles/abc123.jpg"
+    }
+  ],
+  "propietario": {
+    "id": 5,
+    "nombre": "Juan Pérez"
+  },
+  "resenas": [],
+  "promedio_calificacion": 0
+}
+```
+
+## Error Responses
+
+### 404 Not Found
+
+```json
+{
+  "message": "Property not found"
+}
+```
+
+## Related Endpoints
+
+- [List Properties](/api/properties/list) - Browse all available properties
+- [Search Properties](/api/properties/search) - Filter properties by criteria
+- [List Reviews](/api/reviews/list) - Get reviews for this property
+
+## Source Reference
+
+- Route: `routes/api.php:27`
+- Controller: `app/Http/Controllers/Api/InmuebleController.php`
+- Resource: `app/Http/Resources/InmuebleResource.php`

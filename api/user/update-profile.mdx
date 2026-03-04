@@ -1,0 +1,123 @@
+---
+title: "Update Profile"
+api: "POST /api/perfil/actualizar"
+description: "Update the authenticated user's profile information"
+---
+
+## Overview
+
+This endpoint allows users to update their personal information including name, photo, and password.
+
+## Authentication
+
+<Note>
+  Requires authentication with Bearer token
+</Note>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer {token}
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  application/json (or multipart/form-data for photo upload)
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="nombre" type="string">
+  User's full name
+</ParamField>
+
+<ParamField body="email" type="string">
+  Email address (must be unique)
+</ParamField>
+
+<ParamField body="password" type="string">
+  New password (minimum 8 characters)
+</ParamField>
+
+<ParamField body="password_confirmation" type="string">
+  Password confirmation (required if changing password)
+</ParamField>
+
+<ParamField body="foto_perfil" type="file">
+  Profile photo (JPG, PNG, max 2MB)
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  Updated user object (UserResource format)
+</ResponseField>
+
+## Examples
+
+### Update Name
+
+```bash cURL
+curl -X POST https://arrendaoco.com/api/perfil/actualizar \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"nombre": "John Smith"}'
+```
+
+### Change Password
+
+```bash cURL
+curl -X POST https://arrendaoco.com/api/perfil/actualizar \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "password": "newpassword123",
+    "password_confirmation": "newpassword123"
+  }'
+```
+
+### Upload Photo
+
+```bash cURL
+curl -X POST https://arrendaoco.com/api/perfil/actualizar \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "foto_perfil=@/path/to/photo.jpg"
+```
+
+### Response
+
+```json
+{
+  "message": "Perfil actualizado exitosamente",
+  "user": {
+    "id": 1,
+    "nombre": "John Smith",
+    "email": "john@example.com",
+    "foto_perfil": "https://arrendaoco.com/storage/perfil/new-photo.jpg",
+    "estatus": "activo",
+    "roles": ["inquilino"]
+  }
+}
+```
+
+## Error Responses
+
+### 422 Validation Error
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "email": ["The email has already been taken."],
+    "password": ["The password confirmation does not match."]
+  }
+}
+```
+
+## Source Reference
+
+- Route: `routes/api.php:49`
+- Controller: `app/Http/Controllers/Api/PerfilController.php`

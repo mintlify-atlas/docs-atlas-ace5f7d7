@@ -1,0 +1,101 @@
+---
+title: "Request Landlord Role"
+api: "POST /api/perfil/solicitar-propietario"
+description: "Upgrade user account to landlord status to list properties"
+---
+
+## Overview
+
+This endpoint allows tenants to request the `propietario` (landlord) role, enabling them to list and manage properties on the platform.
+
+## Authentication
+
+<Note>
+  Requires authentication. User must have `inquilino` role.
+</Note>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer {token}
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message confirming role assignment
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  Updated user object with new role
+</ResponseField>
+
+## Examples
+
+### Request
+
+```bash cURL
+curl -X POST https://arrendaoco.com/api/perfil/solicitar-propietario \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+```javascript JavaScript
+const response = await fetch('https://arrendaoco.com/api/perfil/solicitar-propietario', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN'
+  }
+});
+const result = await response.json();
+```
+
+### Response
+
+```json
+{
+  "message": "Ahora eres propietario. ¡Puedes publicar inmuebles!",
+  "user": {
+    "id": 1,
+    "nombre": "John Doe",
+    "email": "john@example.com",
+    "roles": ["inquilino", "propietario"]
+  }
+}
+```
+
+## Error Responses
+
+### 401 Unauthorized
+
+```json
+{
+  "message": "Unauthenticated."
+}
+```
+
+### 400 Already a Landlord
+
+```json
+{
+  "message": "Ya tienes el rol de propietario"
+}
+```
+
+## What Happens After
+
+Once approved as a landlord, users can:
+- Create property listings
+- Manage their properties
+- View rental applications
+- Create contracts with tenants
+- Track rental income
+
+## Related Endpoints
+
+- [Create Property](/api/properties/create) - List your first property
+- [Get Current User](/api/user/me) - Check your roles
+
+## Source Reference
+
+- Route: `routes/api.php:50`
+- Controller: `app/Http/Controllers/Api/PerfilController.php`

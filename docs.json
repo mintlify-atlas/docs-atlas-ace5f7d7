@@ -79,9 +79,18 @@
             ]
           },
           {
+            "group": "User",
+            "pages": [
+              "api/user/me",
+              "api/user/update-profile",
+              "api/user/request-landlord"
+            ]
+          },
+          {
             "group": "Properties",
             "pages": [
               "api/properties/list",
+              "api/properties/detail",
               "api/properties/create",
               "api/properties/update",
               "api/properties/delete",
