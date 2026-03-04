@@ -1,0 +1,354 @@
+---
+title: "List Properties"
+description: "Retrieve a paginated list of available properties"
+---
+
+## Endpoint
+
+```
+GET /api/inmuebles/public-list
+```
+
+## Description
+
+Returns a paginated list of all properties with `disponible` (available) status. This endpoint is public and does not require authentication.
+
+## Query Parameters
+
+<ParamField query="tipo" type="string" optional>
+  Filter properties by type (e.g., "Casa", "Departamento", "Local")
+</ParamField>
+
+<ParamField query="ciudad" type="string" optional>
+  Filter properties by city name (partial match supported)
+</ParamField>
+
+<ParamField query="page" type="integer" default="1" optional>
+  Page number for pagination
+</ParamField>
+
+<ParamField query="per_page" type="integer" default="15" optional>
+  Number of results per page
+</ParamField>
+
+## Request Example
+
+```bash cURL
+curl -X GET "https://api.arrendaoco.com/api/inmuebles/public-list?tipo=Casa&ciudad=Ocosingo&page=1" \
+  -H "Accept: application/json"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.arrendaoco.com/api/inmuebles/public-list?tipo=Casa&ciudad=Ocosingo',
+  {
+    headers: {
+      'Accept': 'application/json'
+    }
+  }
+);
+const data = await response.json();
+```
+
+## Response
+
+<ResponseField name="data" type="array">
+  Array of property objects
+  
+  <Expandable title="Property Object">
+    <ResponseField name="id" type="integer">
+      Unique property identifier
+    </ResponseField>
+    
+    <ResponseField name="titulo" type="string">
+      Property title
+    </ResponseField>
+    
+    <ResponseField name="descripcion" type="string">
+      Property description
+    </ResponseField>
+    
+    <ResponseField name="direccion" type="string">
+      Street address
+    </ResponseField>
+    
+    <ResponseField name="ciudad" type="string">
+      City name
+    </ResponseField>
+    
+    <ResponseField name="estado" type="string">
+      State/province name
+    </ResponseField>
+    
+    <ResponseField name="codigo_postal" type="string">
+      Postal code
+    </ResponseField>
+    
+    <ResponseField name="tipo" type="string">
+      Property type (Casa, Departamento, Local, etc.)
+    </ResponseField>
+    
+    <ResponseField name="renta_mensual" type="number">
+      Monthly rent amount (MXN)
+    </ResponseField>
+    
+    <ResponseField name="deposito" type="number">
+      Security deposit amount (MXN)
+    </ResponseField>
+    
+    <ResponseField name="estatus" type="string">
+      Property status: `disponible`, `rentado`, or `inactivo`
+    </ResponseField>
+    
+    <ResponseField name="habitaciones" type="integer">
+      Number of bedrooms
+    </ResponseField>
+    
+    <ResponseField name="banos" type="integer">
+      Number of bathrooms
+    </ResponseField>
+    
+    <ResponseField name="metros" type="number">
+      Property size in square meters
+    </ResponseField>
+    
+    <ResponseField name="latitud" type="number">
+      Latitude coordinate
+    </ResponseField>
+    
+    <ResponseField name="longitud" type="number">
+      Longitude coordinate
+    </ResponseField>
+    
+    <ResponseField name="imagen_portada" type="string">
+      Main property image URL
+    </ResponseField>
+    
+    <ResponseField name="video_youtube" type="string">
+      YouTube video URL (if available)
+    </ResponseField>
+    
+    <ResponseField name="video_thumbnail" type="string">
+      YouTube video thumbnail URL
+    </ResponseField>
+    
+    <ResponseField name="video_titulo" type="string">
+      YouTube video title
+    </ResponseField>
+    
+    <ResponseField name="propietario" type="object">
+      Owner information
+      
+      <Expandable title="Properties">
+        <ResponseField name="id" type="integer">
+          Owner user ID
+        </ResponseField>
+        
+        <ResponseField name="nombre" type="string">
+          Owner name
+        </ResponseField>
+        
+        <ResponseField name="email" type="string">
+          Owner email address
+        </ResponseField>
+        
+        <ResponseField name="foto_perfil" type="string">
+          Owner profile photo URL
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="imagenes" type="array">
+      Array of property images
+      
+      <Expandable title="Image Object">
+        <ResponseField name="id" type="integer">
+          Image ID
+        </ResponseField>
+        
+        <ResponseField name="url" type="string">
+          Full image URL
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="resenas" type="array">
+      Array of property reviews
+      
+      <Expandable title="Review Object">
+        <ResponseField name="id" type="integer">
+          Review ID
+        </ResponseField>
+        
+        <ResponseField name="usuario" type="string">
+          Reviewer name
+        </ResponseField>
+        
+        <ResponseField name="puntuacion" type="integer">
+          Rating (1-5)
+        </ResponseField>
+        
+        <ResponseField name="comentario" type="string">
+          Review comment
+        </ResponseField>
+        
+        <ResponseField name="fecha" type="string">
+          Relative time (e.g., "2 days ago")
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="promedio_calificacion" type="number">
+      Average rating from all reviews
+    </ResponseField>
+    
+    <ResponseField name="total_resenas" type="integer">
+      Total number of reviews
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      Property creation timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="links" type="object">
+  Pagination links
+  
+  <Expandable title="Properties">
+    <ResponseField name="first" type="string">
+      First page URL
+    </ResponseField>
+    
+    <ResponseField name="last" type="string">
+      Last page URL
+    </ResponseField>
+    
+    <ResponseField name="prev" type="string">
+      Previous page URL (null if on first page)
+    </ResponseField>
+    
+    <ResponseField name="next" type="string">
+      Next page URL (null if on last page)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Pagination metadata
+  
+  <Expandable title="Properties">
+    <ResponseField name="current_page" type="integer">
+      Current page number
+    </ResponseField>
+    
+    <ResponseField name="from" type="integer">
+      Starting result number
+    </ResponseField>
+    
+    <ResponseField name="to" type="integer">
+      Ending result number
+    </ResponseField>
+    
+    <ResponseField name="total" type="integer">
+      Total number of results
+    </ResponseField>
+    
+    <ResponseField name="per_page" type="integer">
+      Results per page
+    </ResponseField>
+    
+    <ResponseField name="last_page" type="integer">
+      Last page number
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Response Example
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "titulo": "Casa amplia en el centro",
+      "descripcion": "Hermosa casa de 3 recámaras con jardín",
+      "direccion": "Calle Principal #123",
+      "ciudad": "Ocosingo",
+      "estado": "Chiapas",
+      "codigo_postal": "29950",
+      "tipo": "Casa",
+      "renta_mensual": 5000,
+      "deposito": 5000,
+      "estatus": "disponible",
+      "habitaciones": 3,
+      "banos": 2,
+      "metros": 120.5,
+      "latitud": 16.9046,
+      "longitud": -92.0932,
+      "imagen_portada": "https://api.arrendaoco.com/storage/inmuebles/photo1.jpg",
+      "video_youtube": null,
+      "video_thumbnail": null,
+      "video_titulo": null,
+      "propietario": {
+        "id": 5,
+        "nombre": "Juan Pérez",
+        "email": "juan@example.com",
+        "foto_perfil": "https://api.arrendaoco.com/storage/avatars/juan.jpg"
+      },
+      "imagenes": [
+        {
+          "id": 1,
+          "url": "https://api.arrendaoco.com/storage/inmuebles/photo1.jpg"
+        },
+        {
+          "id": 2,
+          "url": "https://api.arrendaoco.com/storage/inmuebles/photo2.jpg"
+        }
+      ],
+      "resenas": [
+        {
+          "id": 10,
+          "usuario": "María López",
+          "puntuacion": 5,
+          "comentario": "Excelente propiedad, muy bien ubicada",
+          "fecha": "2 days ago"
+        }
+      ],
+      "promedio_calificacion": 4.8,
+      "total_resenas": 5,
+      "created_at": "2026-02-15 10:30:00"
+    }
+  ],
+  "links": {
+    "first": "https://api.arrendaoco.com/api/inmuebles/public-list?page=1",
+    "last": "https://api.arrendaoco.com/api/inmuebles/public-list?page=3",
+    "prev": null,
+    "next": "https://api.arrendaoco.com/api/inmuebles/public-list?page=2"
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "to": 15,
+    "total": 42,
+    "per_page": 15,
+    "last_page": 3
+  }
+}
+```
+
+## Implementation Details
+
+**Source:** `app/Http/Controllers/Api/InmuebleController.php:21`
+
+- Only returns properties with `estatus = 'disponible'`
+- Results are ordered by most recent first (`latest()`)
+- Eager loads related data: `propietario`, `imagenes`, `resenas.usuario`
+- Default pagination: 15 items per page
+
+## Notes
+
+- This endpoint is publicly accessible (no authentication required)
+- Filters are case-insensitive and support partial matching for `ciudad`
+- The `tipo` filter requires an exact match
+- All monetary values are in Mexican Pesos (MXN)

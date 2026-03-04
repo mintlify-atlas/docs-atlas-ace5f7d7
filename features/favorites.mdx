@@ -1,0 +1,496 @@
+---
+title: Favorites
+description: Save properties to favorites, add personal notes, and manage your wishlist
+---
+
+## Overview
+
+ArrendaOco's favorites system allows users to bookmark properties they're interested in, add personal notes, and organize their rental search.
+
+## Favorites Model
+
+### Database Schema
+
+From migration `2026_02_04_172236_create_favoritos_table.php`:
+
+```php
+Schema::create('favoritos', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('usuario_id')
+        ->constrained('usuarios')
+        ->onDelete('cascade');
+    $table->foreignId('inmueble_id')
+        ->constrained('inmuebles')
+        ->onDelete('cascade');
+    $table->text('nota')->nullable();
+    $table->timestamps();
+    
+    $table->unique(['usuario_id', 'inmueble_id']);
+});
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `usuario_id` | foreign key | User who saved the favorite |
+| `inmueble_id` | foreign key | Property saved as favorite |
+| `nota` | text | Personal note about the property |
+| `created_at` | timestamp | When favorite was added |
+
+<Note>
+The unique constraint `(usuario_id, inmueble_id)` ensures a user can only favorite a property once.
+</Note>
+
+## Adding/Removing Favorites
+
+### Toggle Favorite
+
+The system uses a toggle mechanism - clicking favorite either adds or removes the property.
+
+**Web Route**: `POST /favoritos/{inmueble}/toggle`
+
+**API Route**: `POST /api/favoritos/{inmueble}/toggle`
+
+**Access**: Authenticated users only
+
+**Implementation** (app/Http/Controllers/FavoritoController.php:24-54):
+
+```php
+public function toggle(Inmueble $inmueble)
+{
+    $usuario = Auth::user();
+    
+    $existe = Favorito::where('usuario_id', $usuario->id)
+                      ->where('inmueble_id', $inmueble->id)
+                      ->first();
+    
+    if ($existe) {
+        // Remove from favorites
+        $existe->delete();
+        $mensaje = 'Eliminado de favoritos';
+        $agregado = false;
+    } else {
+        // Add to favorites
+        Favorito::create([
+            'usuario_id' => $usuario->id,
+            'inmueble_id' => $inmueble->id
+        ]);
+        $mensaje = 'Agregado a favoritos';
+        $agregado = true;
+    }
+    
+    if (request()->ajax() || request()->wantsJson()) {
+        return response()->json([
+            'success' => true,
+            'mensaje' => $mensaje,
+            'agregado' => $agregado
+        ]);
+    }
+    
+    return back();
+}
+```
+
+**API Response Example**:
+
+```json
+{
+  "success": true,
+  "mensaje": "Agregado a favoritos",
+  "agregado": true
+}
+```
+
+### AJAX Implementation
+
+Favorite buttons typically use AJAX for smooth UX:
+
+```javascript
+function toggleFavorito(inmuebleId) {
+    fetch(`/favoritos/${inmuebleId}/toggle`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update button icon
+            const btn = document.getElementById(`fav-${inmuebleId}`);
+            btn.innerHTML = data.agregado ? '❤️' : '🤍';
+            
+            // Show toast notification
+            alert(data.mensaje);
+        }
+    });
+}
+```
+
+**HTML Button Example**:
+
+```html
+<button 
+    id="fav-{{ $inmueble->id }}" 
+    onclick="toggleFavorito({{ $inmueble->id }})"
+    class="favorite-btn">
+    @if(in_array($inmueble->id, $favoritosIds))
+        ❤️ <!-- Filled heart -->
+    @else
+        🤍 <!-- Empty heart -->
+    @endif
+</button>
+```
+
+## Viewing Favorites
+
+### List All Favorites
+
+**Web Route**: `GET /favoritos`
+
+**API Route**: `GET /api/favoritos`
+
+**Access**: Authenticated users only
+
+**Implementation** (app/Http/Controllers/FavoritoController.php:16-19):
+
+```php
+public function index()
+{
+    $favoritos = Auth::user()->inmueblesFavoritos()
+        ->latest()
+        ->paginate(12);
+    
+    return view('favoritos.index', compact('favoritos'));
+}
+```
+
+**User Model Relationship**:
+
+```php
+class Usuario extends Authenticatable
+{
+    public function inmueblesFavoritos()
+    {
+        return $this->belongsToMany(
+            Inmueble::class,
+            'favoritos',
+            'usuario_id',
+            'inmueble_id'
+        )->withPivot('nota', 'created_at');
+    }
+}
+```
+
+**API Response Example**:
+
+```json
+[
+  {
+    "id": 12,
+    "titulo": "Casa cerca de la UTS",
+    "renta_mensual": 3500.00,
+    "direccion": "Calle Tecnológica 123",
+    "imagen": "/storage/inmuebles/casa1.jpg",
+    "pivot": {
+      "nota": "Preguntar por el estacionamiento",
+      "created_at": "2026-03-01T10:30:00Z"
+    }
+  },
+  {
+    "id": 24,
+    "titulo": "Departamento en el Centro",
+    "renta_mensual": 4200.00,
+    "direccion": "Av. Central 456",
+    "imagen": "/storage/inmuebles/depto1.jpg",
+    "pivot": {
+      "nota": null,
+      "created_at": "2026-02-28T15:45:00Z"
+    }
+  }
+]
+```
+
+## Adding Notes to Favorites
+
+Users can add personal notes to remember details about properties.
+
+**Web Route**: `PUT /favoritos/{inmueble}`
+
+**API Route**: `PUT /api/favoritos/{inmueble}`
+
+**Request Example**:
+
+```json
+{
+  "nota": "Visitar el sábado a las 10am. Preguntar sobre servicios incluidos."
+}
+```
+
+**Implementation** (app/Http/Controllers/FavoritoController.php:59-74):
+
+```php
+public function update(Request $request, Inmueble $inmueble)
+{
+    $request->validate([
+        'nota' => 'nullable|string|max:500'
+    ]);
+    
+    $favorito = Favorito::where('usuario_id', Auth::id())
+                        ->where('inmueble_id', $inmueble->id)
+                        ->firstOrFail();
+    
+    $favorito->update([
+        'nota' => $request->nota
+    ]);
+    
+    return back()->with('success', 'Nota actualizada correctamente');
+}
+```
+
+<Tip>
+Notes are limited to 500 characters and are completely private - only visible to the user who created them.
+</Tip>
+
+### Note Form Example
+
+```html
+<form method="POST" action="/favoritos/{{ $inmueble->id }}" class="note-form">
+    @csrf
+    @method('PUT')
+    
+    <textarea 
+        name="nota" 
+        maxlength="500" 
+        placeholder="Agrega una nota personal sobre esta propiedad...">
+        {{ $inmueble->pivot->nota }}
+    </textarea>
+    
+    <button type="submit">Guardar Nota</button>
+</form>
+```
+
+## Displaying Favorites on Property Cards
+
+Show favorite status when listing properties.
+
+**Controller** (app/Http/Controllers/InmuebleController.php:244-255):
+
+```php
+public function home()
+{
+    $inmuebles = Inmueble::where('estatus', 'disponible')
+        ->latest()
+        ->paginate(9);
+    
+    $favoritosIds = [];
+    if (auth()->check()) {
+        $favoritosIds = auth()->user()
+            ->favoritos()
+            ->pluck('inmueble_id')
+            ->toArray();
+    }
+    
+    return view('inicio', compact('inmuebles', 'favoritosIds'));
+}
+```
+
+**Blade Template**:
+
+```blade
+@foreach($inmuebles as $inmueble)
+    <div class="property-card">
+        <img src="{{ $inmueble->imagen }}" alt="{{ $inmueble->titulo }}">
+        <h3>{{ $inmueble->titulo }}</h3>
+        <p>{{ $inmueble->renta_mensual }} MXN/mes</p>
+        
+        <button 
+            onclick="toggleFavorito({{ $inmueble->id }})"
+            class="fav-btn {{ in_array($inmueble->id, $favoritosIds) ? 'active' : '' }}">
+            @if(in_array($inmueble->id, $favoritosIds))
+                ❤️ En Favoritos
+            @else
+                🤍 Agregar a Favoritos
+            @endif
+        </button>
+    </div>
+@endforeach
+```
+
+## User Model Relationship
+
+Define the relationship in the `Usuario` model:
+
+```php
+class Usuario extends Authenticatable
+{
+    /**
+     * Favoritos relationship (through pivot table)
+     */
+    public function inmueblesFavoritos()
+    {
+        return $this->belongsToMany(
+            Inmueble::class,
+            'favoritos',
+            'usuario_id',
+            'inmueble_id'
+        )->withPivot('nota', 'created_at')
+          ->withTimestamps();
+    }
+    
+    /**
+     * Direct favoritos records
+     */
+    public function favoritos()
+    {
+        return $this->hasMany(Favorito::class, 'usuario_id');
+    }
+}
+```
+
+## Inmueble Model Relationship
+
+```php
+class Inmueble extends Model
+{
+    public function usuariosFavoritos()
+    {
+        return $this->belongsToMany(
+            Usuario::class,
+            'favoritos',
+            'inmueble_id',
+            'usuario_id'
+        );
+    }
+}
+```
+
+## Use Cases
+
+### UC-26: Alta de Favorito
+
+**Actor**: Tenant
+
+**Flow**:
+1. User views property details
+2. Clicks "Add to Favorites" button
+3. System creates `Favorito` record
+4. UI updates to show filled heart ❤️
+
+### UC-27: Baja de Favorito
+
+**Actor**: Tenant
+
+**Flow**:
+1. User views favorited property
+2. Clicks "Remove from Favorites" button
+3. System deletes `Favorito` record
+4. UI updates to show empty heart 🤍
+
+### UC-28: Edición de Favorito
+
+**Actor**: Tenant
+
+**Flow**:
+1. User views favorites list
+2. Adds/edits note for a property
+3. System updates `nota` field
+4. Note is saved and displayed
+
+### UC-29: Consulta de Favoritos
+
+**Actor**: Tenant
+
+**Flow**:
+1. User navigates to `/favoritos`
+2. System displays all favorited properties
+3. User can see notes and manage favorites
+
+## Cascade Deletion
+
+<Warning>
+When a property is deleted, all associated favorites are automatically removed via `onDelete('cascade')`.
+When a user account is deleted, all their favorites are removed.
+</Warning>
+
+## API Endpoints Summary
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/favoritos` | Yes | List my favorites |
+| POST | `/api/favoritos/{inmueble}/toggle` | Yes | Add/remove favorite |
+| PUT | `/api/favoritos/{inmueble}` | Yes | Update favorite note |
+
+## Statistics
+
+You can track property popularity by favorite count:
+
+```php
+$popularProperties = Inmueble::withCount('usuariosFavoritos')
+    ->orderBy('usuarios_favoritos_count', 'desc')
+    ->limit(10)
+    ->get();
+```
+
+## Best Practices
+
+### For Users
+
+1. **Use notes**: Add reminders like appointment times, questions to ask
+2. **Regular review**: Check favorites before they're rented by others
+3. **Compare options**: Keep multiple favorites to compare features and prices
+
+### For Developers
+
+1. **AJAX for better UX**: Toggle favorites without page reload
+2. **Visual feedback**: Clearly show favorite status with icons/colors
+3. **Pagination**: Use pagination for users with many favorites
+4. **Notification**: Notify users if a favorited property becomes unavailable
+
+## Frontend Integration Examples
+
+### Favorite Counter Badge
+
+```html
+<a href="/favoritos" class="favorites-link">
+    ❤️ Favoritos 
+    @if(auth()->check())
+        <span class="badge">{{ auth()->user()->favoritos()->count() }}</span>
+    @endif
+</a>
+```
+
+### Favorite Grid View
+
+```blade
+<div class="favorites-grid">
+    @forelse($favoritos as $inmueble)
+        <div class="favorite-card">
+            <img src="{{ $inmueble->imagen }}" alt="{{ $inmueble->titulo }}">
+            <h3>{{ $inmueble->titulo }}</h3>
+            <p class="price">${{ number_format($inmueble->renta_mensual, 2) }}/mes</p>
+            
+            @if($inmueble->pivot->nota)
+                <div class="note">
+                    <strong>Mi nota:</strong>
+                    <p>{{ $inmueble->pivot->nota }}</p>
+                </div>
+            @endif
+            
+            <a href="/inmuebles/{{ $inmueble->id }}" class="btn">Ver Detalles</a>
+            
+            <button onclick="toggleFavorito({{ $inmueble->id }})">🗑️ Eliminar</button>
+        </div>
+    @empty
+        <p>No tienes favoritos aún. ¡Explora propiedades y agrega tus favoritas!</p>
+    @endforelse
+</div>
+```
+
+## Next Steps
+
+- [Search Properties](/features/properties)
+- [Leave Reviews](/features/reviews)
+- [Create Rental Contract](/features/contracts)

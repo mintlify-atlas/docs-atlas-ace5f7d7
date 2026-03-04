@@ -1,80 +1,293 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "Quickstart Guide"
+description: "Get ArrendaOco up and running in under 10 minutes"
 ---
 
-## Get started in three steps
+## Get Started Quickly
 
-Get your documentation site running locally and make your first customization.
+This guide will help you set up ArrendaOco on your local machine in less than 10 minutes.
 
-### Step 1: Set up your local environment
+## Prerequisites
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
+Before you begin, ensure you have the following installed:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="PHP 8.2+" icon="php">
+    Required for Laravel 12
+  </Card>
+  <Card title="Composer" icon="box">
+    PHP dependency manager
+  </Card>
+  <Card title="Node.js 18+" icon="node-js">
+    For frontend assets
+  </Card>
+  <Card title="MySQL/PostgreSQL" icon="database">
+    Database server
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Installation Steps
+
+<Steps>
+  <Step title="Clone the Repository">
+    Get the ArrendaOco source code from GitHub:
+    
+    ```bash
+    git clone https://github.com/edagrex-sketch/Arrendaoco.git
+    cd Arrendaoco
+    ```
+  </Step>
+  
+  <Step title="Install Dependencies">
+    Install both PHP and JavaScript dependencies:
+    
+    <CodeGroup>
+    ```bash Composer & NPM
+    composer install
+    npm install
+    ```
+    
+    ```bash Using Script
+    composer run setup
+    ```
+    </CodeGroup>
+    
+    The setup script will automatically:
+    - Install PHP dependencies
+    - Copy `.env.example` to `.env`
+    - Generate application key
+    - Run database migrations
+    - Install Node.js dependencies
+    - Build frontend assets
+  </Step>
+  
+  <Step title="Configure Environment">
+    If you didn't use the setup script, copy the environment file and generate an application key:
+    
+    ```bash
+    cp .env.example .env
+    php artisan key:generate
+    ```
+    
+    Update your `.env` file with database credentials:
+    
+    ```bash
+    DB_CONNECTION=mysql
+    DB_HOST=127.0.0.1
+    DB_PORT=3306
+    DB_DATABASE=arrendaoco
+    DB_USERNAME=your_username
+    DB_PASSWORD=your_password
+    ```
+  </Step>
+  
+  <Step title="Set Up Database">
+    Create the database and run migrations:
+    
+    ```bash
+    # Create database (MySQL)
+    mysql -u root -p -e "CREATE DATABASE arrendaoco"
+    
+    # Run migrations
+    php artisan migrate
+    ```
+    
+    <Note>
+      The migrations will create all necessary tables including users, properties, contracts, payments, and reviews.
+    </Note>
+  </Step>
+  
+  <Step title="Link Storage">
+    Create a symbolic link for public file storage:
+    
+    ```bash
+    php artisan storage:link
+    ```
+  </Step>
+  
+  <Step title="Start Development Servers">
+    Run both the Laravel backend and Vite frontend server:
+    
+    <Tabs>
+      <Tab title="Concurrent (Recommended)">
+        ```bash
+        composer run dev
+        ```
+        
+        This starts PHP server, queue worker, and Vite dev server concurrently.
+      </Tab>
+      
+      <Tab title="Separate Terminals">
+        Terminal 1 - Backend:
+        ```bash
+        php artisan serve
+        ```
+        
+        Terminal 2 - Frontend:
+        ```bash
+        npm run dev
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  
+  <Step title="Access the Application">
+    Open your browser and navigate to:
+    
+    ```
+    http://localhost:8000
+    ```
+    
+    You should see the ArrendaOco homepage with available properties.
+  </Step>
+  
+  <Step title="Create Your First Account">
+    Register a new user account through the web interface at `/registro` or use the API:
+    
+    ```bash
+    curl -X POST http://localhost:8000/api/register \
+      -H "Content-Type: application/json" \
+      -d '{
+        "nombre": "John Doe",
+        "email": "john@example.com",
+        "password": "password123",
+        "password_confirmation": "password123"
+      }'
+    ```
+    
+    <Accordion title="Example API Response">
+      ```json
+      {
+        "user": {
+          "id": 1,
+          "nombre": "John Doe",
+          "email": "john@example.com",
+          "estatus": "activo",
+          "roles": ["inquilino"]
+        },
+        "token": "1|abcdef1234567890..."
+      }
+      ```
+    </Accordion>
+  </Step>
+</Steps>
+
+## Verify Installation
+
+Test that everything is working:
+
+<AccordionGroup>
+  <Accordion title="Check Web Interface">
+    - Visit `http://localhost:8000`
+    - You should see the homepage with property listings
+    - Try registering a new account
+    - Search for properties using filters
+  </Accordion>
+  
+  <Accordion title="Test API Endpoints">
+    ```bash
+    # List public properties
+    curl http://localhost:8000/api/inmuebles/public-list
+    
+    # Login
+    curl -X POST http://localhost:8000/api/login \
+      -H "Content-Type: application/json" \
+      -d '{"email":"john@example.com","password":"password123"}'
+    ```
+  </Accordion>
+  
+  <Accordion title="Test AI Assistant">
+    ```bash
+    # Chat with Arrendito
+    curl -X POST http://localhost:8000/api/arrendito/chat \
+      -H "Content-Type: application/json" \
+      -d '{"mensaje":"Busco una casa cerca del centro"}'
+    ```
+    
+    <Note>
+      Configure `GEMINI_API_KEY` in `.env` for the AI assistant to work.
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+## Optional Configuration
+
+### API Keys for Enhanced Features
+
+<Accordion title="Google Gemini AI (ROCO Chatbot)">
+  Get an API key from [Google AI Studio](https://makersuite.google.com/app/apikey):
+  
+  ```bash
+  GEMINI_API_KEY=your_gemini_api_key
+  ```
+</Accordion>
+
+<Accordion title="Social Authentication">
+  Configure Google OAuth:
+  
+  ```bash
+  GOOGLE_CLIENT_ID=your_client_id
+  GOOGLE_CLIENT_SECRET=your_client_secret
+  GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
+  ```
+</Accordion>
+
+<Accordion title="YouTube Integration">
+  For property video tours:
+  
+  ```bash
+  YOUTUBE_API_KEY=your_youtube_api_key
+  ```
+</Accordion>
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Database Connection Error">
+    **Error**: `SQLSTATE[HY000] [1045] Access denied`
+    
+    **Solution**: Check your database credentials in `.env` and ensure MySQL/PostgreSQL is running.
+  </Accordion>
+  
+  <Accordion title="Assets Not Loading">
+    **Error**: 404 errors for CSS/JS files
+    
+    **Solution**: Run `npm run build` and ensure `php artisan storage:link` was executed.
+  </Accordion>
+  
+  <Accordion title="Permission Denied on Storage">
+    **Error**: `file_put_contents(): failed to open stream: Permission denied`
+    
+    **Solution**: 
+    ```bash
+    chmod -R 775 storage bootstrap/cache
+    chown -R www-data:www-data storage bootstrap/cache
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Explore Features" icon="compass" href="/features/properties">
+    Learn about property management and listings
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api/auth/login">
+    Explore the RESTful API endpoints
+  </Card>
+  
+  <Card title="User Guides" icon="book" href="/guides/tenant-guide">
+    Role-specific guides for tenants and landlords
+  </Card>
+  
+  <Card title="Configuration" icon="gear" href="/configuration/environment">
+    Detailed environment and deployment setup
+  </Card>
+</CardGroup>
+
+## Need Help?
+
+- See the [Full Installation Guide](/installation) for detailed setup
+- Read the [Introduction](/introduction) for platform overview
+- Check [Configuration](/configuration/environment) for advanced setup

@@ -1,0 +1,140 @@
+---
+title: 'Generate Payments'
+api: 'POST /api/contratos/{id}/pagos/generar'
+description: 'Manually generate payment records for a contract over a specified number of months'
+---
+
+## Authentication
+
+This endpoint requires authentication via Sanctum token.
+
+```bash
+Authorization: Bearer {token}
+```
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  Contract ID to generate payments for
+</ParamField>
+
+## Request Body
+
+<ParamField body="meses" type="integer" required>
+  Number of months to generate payments for. Must be between 1 and 24.
+</ParamField>
+
+## Business Logic
+
+### Contract Validation
+
+- Contract must have status `activo`
+- Returns 422 error if contract is not active
+
+### Payment Generation
+
+- Generates payment records starting from the contract's `fecha_inicio`
+- Creates one payment per month for the specified number of months
+- Uses `firstOrCreate` to avoid duplicate payments (based on contract_id, mes, anio)
+- Each payment amount equals the contract's `renta_mensual`
+- All generated payments start with status `pendiente`
+
+### Transaction Safety
+
+All payment records are created within a database transaction to ensure data integrity.
+
+## Response
+
+<ResponseField name="contrato_id" type="integer">
+  ID of the contract
+</ResponseField>
+
+<ResponseField name="pagos_generados" type="integer">
+  Number of payment records created
+</ResponseField>
+
+<ResponseField name="pagos" type="array">
+  Array of generated payment objects
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.arrendaco.com/api/contratos/5/pagos/generar \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "meses": 6
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "contrato_id": 5,
+  "pagos_generados": 6,
+  "pagos": [
+    {
+      "id": 21,
+      "contrato_id": 5,
+      "mes": 3,
+      "anio": 2026,
+      "monto": "12000.00",
+      "estatus": "pendiente",
+      "fecha_pago": null,
+      "created_at": "2026-03-04T10:30:00.000000Z",
+      "updated_at": "2026-03-04T10:30:00.000000Z"
+    },
+    {
+      "id": 22,
+      "contrato_id": 5,
+      "mes": 4,
+      "anio": 2026,
+      "monto": "12000.00",
+      "estatus": "pendiente",
+      "fecha_pago": null,
+      "created_at": "2026-03-04T10:30:00.000000Z",
+      "updated_at": "2026-03-04T10:30:00.000000Z"
+    }
+  ]
+}
+```
+
+## Error Responses
+
+### Contract Not Active
+
+```json
+{
+  "message": "El contrato no está activo"
+}
+```
+
+**Status Code:** 422
+
+### Validation Error
+
+```json
+{
+  "message": "The meses field must be at least 1.",
+  "errors": {
+    "meses": [
+      "The meses field must be at least 1."
+    ]
+  }
+}
+```
+
+**Status Code:** 422
+
+## Notes
+
+- Duplicate prevention: If payment records already exist for a specific month/year combination, they won't be duplicated
+- The unique constraint is on `(contrato_id, mes, anio)`
+- Maximum 24 months can be generated at once
+
+## Implementation Reference
+
+See `app/Http/Controllers/Api/PagoController.php:18`

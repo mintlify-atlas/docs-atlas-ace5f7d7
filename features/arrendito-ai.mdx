@@ -1,0 +1,476 @@
+---
+title: Arrendito AI Chat
+description: Intelligent AI assistant powered by Google Gemini for property search and rental guidance
+---
+
+## Overview
+
+Arrendito (also known as ROCO) is ArrendaOco's AI-powered chat assistant that helps users find properties, answer questions about rentals, and provide personalized recommendations using Google's Gemini 2.5 Flash model.
+
+## How It Works
+
+Arrendito combines:
+
+1. **Intelligent Property Search**: Analyzes user messages to find relevant properties
+2. **Google Gemini AI**: Generates natural, helpful responses
+3. **Local Context**: Understands Ocosingo geography (UTS, Centro, etc.)
+4. **Personality**: Responds as a friendly Beagle assistant
+
+## API Endpoint
+
+**Route**: `POST /api/arrendito/chat`
+
+**Web Route**: `POST /arrendito/chat`
+
+**Access**: Public (no authentication required)
+
+**Request Example**:
+
+```json
+{
+  "message": "Busco un cuarto cerca de la UTS por menos de 2000 pesos"
+}
+```
+
+**Response Example**:
+
+```json
+{
+  "success": true,
+  "response": "¡Guau! 🐶 Encontré algunas opciones perfectas para ti cerca de la UTS:<br><br>🏠 <b>Cuarto amueblado UTS</b> (cuarto)<br>💰 $1,800<br>📍 Calle Tecnológica 123<br>🔗 <a href='/inmuebles/15' style='display:inline-block; margin-top:10px; padding:8px 15px; background:#003049; color:white; border-radius:10px; text-decoration:none; font-weight:bold; font-size:12px;'>🏠 Ver Detalles de la Casa</a><br><br>¿Te gustaría saber más sobre alguna? 🦴"
+}
+```
+
+## Implementation
+
+From app/Http/Controllers/ArrenditoChatController.php:24-128:
+
+```php
+public function chat(Request $request)
+{
+    $request->validate(['message' => 'required|string|max:500']);
+    $userMessage = $request->message;
+    $apiKey = config('services.gemini.api_key', env('GEMINI_API_KEY'));
+    
+    if (empty($apiKey)) {
+        return response()->json([
+            'success' => false,
+            'response' => '¡Guau! 🐾 Mi cerebro perruno necesita una llave API para funcionar.'
+        ]);
+    }
+    
+    // Search for relevant properties
+    $inmuebles = $this->buscarInmueblesInteligente($userMessage);
+    
+    // Build context with found properties
+    $contexto = $this->construirContextoInmuebles($inmuebles);
+    
+    // Get system instruction (personality)
+    $systemInstruction = $this->getSystemInstruction();
+    
+    // Combine user message with property context
+    $userContent = "INMUEBLES QUE 'OLFATEASTE' PARA ESTA PREGUNTA:\n{$contexto}\n\nUsuario dice: {$userMessage}";
+    
+    try {
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
+        
+        $response = Http::withoutVerifying()
+            ->timeout(30)
+            ->post($url, [
+                'systemInstruction' => [
+                    'parts' => [['text' => $systemInstruction]]
+                ],
+                'contents' => [
+                    ['role' => 'user', 'parts' => [['text' => $userContent]]]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.8,
+                    'maxOutputTokens' => 1024,
+                ],
+            ]);
+        
+        if ($response->successful()) {
+            $data = $response->json();
+            $resText = $data['candidates'][0]['content']['parts'][0]['text'];
+            return response()->json(['success' => true, 'response' => $resText]);
+        }
+        
+        return response()->json([
+            'success' => false,
+            'response' => '¡Guau! 🐾 Tuve un problemita. ¿Podrías intentar de nuevo?'
+        ]);
+        
+    } catch (\Exception $e) {
+        Log::error("ROCO Chat Error: " . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'response' => '¡Guau! 🐾 Error inesperado. Contacta a arrendaoco@gmail.com'
+        ]);
+    }
+}
+```
+
+## Intelligent Property Search
+
+Arrendito analyzes the user's message to find relevant properties.
+
+### Detection Capabilities
+
+From app/Http/Controllers/ArrenditoChatController.php:134-211:
+
+**1. Location Detection**
+
+```php
+// UTS / University Area
+if (str_contains($mensaje, 'uts') || 
+    str_contains($mensaje, 'universidad') || 
+    str_contains($mensaje, 'tecnológica')) {
+    $query->where(function ($q) {
+        $q->where('direccion', 'LIKE', '%UTS%')
+          ->orWhere('direccion', 'LIKE', '%Universidad%')
+          ->orWhere('titulo', 'LIKE', '%UTS%');
+    });
+}
+
+// Downtown Area
+if (str_contains($mensaje, 'centro') || 
+    str_contains($mensaje, 'parque')) {
+    $query->where('direccion', 'LIKE', '%Centro%');
+}
+```
+
+**2. Price Detection**
+
+```php
+// Specific price: "menos de $2000"
+if (preg_match('/menos\s*de\s*\$?(\d[\d,]*)/i', $mensaje, $matches)) {
+    $precio = (int) str_replace(',', '', $matches[1]);
+    $query->where('renta_mensual', '<=', $precio);
+}
+
+// Budget keywords: "barato", "económico"
+if (str_contains($mensaje, 'barato') || 
+    str_contains($mensaje, 'económico')) {
+    $query->orderBy('renta_mensual', 'asc');
+}
+```
+
+**3. Property Type Detection**
+
+```php
+$tipos = [
+    'departamento' => ['departamento', 'depa', 'depto'],
+    'casa' => ['casa', 'casita'],
+    'cuarto' => ['cuarto', 'habitación', 'recámara'],
+    'local' => ['local', 'comercial', 'negocio'],
+    'terreno' => ['terreno', 'lote'],
+];
+
+foreach ($tipos as $tipo => $keywords) {
+    foreach ($keywords as $keyword) {
+        if (str_contains($mensaje, $keyword)) {
+            $query->where('tipo', 'LIKE', "%{$tipo}%");
+        }
+    }
+}
+```
+
+**4. Fallback to Recent Properties**
+
+```php
+if ($inmuebles->isEmpty()) {
+    $inmuebles = Inmueble::where('estatus', 'disponible')
+        ->latest()
+        ->limit(5)
+        ->get(['id', 'titulo', 'renta_mensual', 'direccion', 'tipo']);
+}
+```
+
+## Context Building
+
+Arrendito formats property information for Gemini.
+
+From app/Http/Controllers/ArrenditoChatController.php:216-230:
+
+```php
+private function construirContextoInmuebles($inmuebles): string
+{
+    if ($inmuebles->isEmpty()) {
+        return "No se encontraron inmuebles disponibles actualmente.";
+    }
+    
+    $contexto = "";
+    foreach ($inmuebles as $i) {
+        $url = route('inmuebles.show', $i->id);
+        $tipo = $i->tipo ? " ({$i->tipo})" : "";
+        $contexto .= "🏠 <b>{$i->titulo}</b>{$tipo}<br>💰 \${$i->renta_mensual}<br>📍 {$i->direccion}<br>🔗 BOTÓN_URL: {$url}<br><br>";
+    }
+    
+    return $contexto;
+}
+```
+
+## System Personality
+
+Arrendito's personality is defined via Gemini's `systemInstruction`.
+
+From app/Http/Controllers/ArrenditoChatController.php:236-260:
+
+```text
+Eres ROCO, el entusiasta asistente Beagle de Arrendaoco en Ocosingo, Chiapas.
+Tu misión es ser amigable, servicial y experto en rentas.
+
+CONTEXTO GEOGRÁFICO DE OCOSINGO:
+- La UTS (Universidad Tecnológica de la Selva) es el punto más importante para estudiantes.
+- El Centro es donde está el parque y el mercado.
+- Zona Norte: colonias populares cerca de la carretera a Palenque.
+- Zona Sur: rumbo a la carretera a San Cristóbal.
+
+INFORMACIÓN DE CONTACTO:
+Si alguien quiere contactar al administrador: arrendaoco@gmail.com
+
+REGLAS CRÍTICAS:
+1. Responde SIEMPRE en HTML usando <b> para resaltar y <br> para separar ideas.
+2. Si el usuario pregunta por la UTS, enfócate en propiedades con 'UTS' o 'Universidad'.
+3. PROHIBIDO: No menciones IDs, códigos técnicos, ni detalles internos.
+4. BOTONES: Usa la BOTÓN_URL para crear enlaces:
+   <a href='BOTÓN_URL' style='...'>🏠 Ver Detalles</a>
+5. Sé breve y usa emojis de perro (🐶, 🦴, 🏠).
+6. Redirige si el usuario pregunta algo fuera de inmuebles/rentas.
+7. Menciona precio y ubicación siempre.
+8. Responde con humor si el usuario usa groserías.
+```
+
+<Note>
+The system instruction is separated from the user message to leverage Gemini's `systemInstruction` feature for consistent personality.
+</Note>
+
+## Example Conversations
+
+### Example 1: Property Search
+
+**User**: "Necesito un cuarto cerca de la UTS barato"
+
+**Arrendito**: 
+```html
+¡Guau! 🐶 Encontré estos cuartos cerca de la UTS que no le ladran a tu bolsillo:<br><br>
+
+🏠 <b>Cuarto amueblado UTS</b> (cuarto)<br>
+💰 $1,800<br>
+📍 Calle Tecnológica 123<br>
+🔗 <a href='/inmuebles/15' style='display:inline-block; margin-top:10px; padding:8px 15px; background:#003049; color:white; border-radius:10px; text-decoration:none; font-weight:bold; font-size:12px;'>🏠 Ver Detalles de la Casa</a><br><br>
+
+🏠 <b>Habitación económica estudiantes</b> (cuarto)<br>
+💰 $1,500<br>
+📍 Av. Universidad 456<br>
+🔗 <a href='/inmuebles/22'>🏠 Ver Detalles</a><br><br>
+
+¿Cuál te gustaría conocer mejor? 🦴
+```
+
+### Example 2: General Question
+
+**User**: "¿Qué documentos necesito para rentar?"
+
+**Arrendito**:
+```html
+¡Guau! 🐶 Excelente pregunta. Generalmente necesitas:<br><br>
+
+📄 <b>Identificación oficial</b> (INE)<br>
+📄 <b>Comprobante de ingresos</b> (recibo de nómina o constancia)<br>
+📄 <b>Referencias personales</b><br>
+📄 <b>Depósito</b> (normalmente equivalente a un mes de renta)<br><br>
+
+Cada propietario puede pedir documentos adicionales. ¿Te ayudo a buscar una propiedad específica? 🏠
+```
+
+### Example 3: Off-Topic
+
+**User**: "¿Cómo está el clima hoy?"
+
+**Arrendito**:
+```html
+¡Guau! 🐾 Soy experto en propiedades, no en meteorología. 🌦️<br><br>
+
+Pero sí puedo ayudarte a encontrar una casa con buen techo para cualquier clima. ¿Buscas algo en particular? 🏠
+```
+
+## Configuration
+
+### Environment Variables
+
+In `.env`:
+
+```bash
+GEMINI_API_KEY=your_google_gemini_api_key_here
+```
+
+### Config File
+
+In `config/services.php`:
+
+```php
+return [
+    // ...
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+];
+```
+
+## Gemini Model
+
+Arrendito uses **Gemini 2.5 Flash** (GA - June 2025).
+
+From app/Http/Controllers/ArrenditoChatController.php:16:
+
+```php
+private const GEMINI_MODEL = 'gemini-2.5-flash';
+```
+
+### Generation Configuration
+
+```php
+'generationConfig' => [
+    'temperature' => 0.8,        // Creative but focused
+    'maxOutputTokens' => 1024,   // Concise responses
+    'topP' => 0.95,
+    'topK' => 40,
+]
+```
+
+### Safety Settings
+
+```php
+'safetySettings' => [
+    ['category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+    ['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_ONLY_HIGH'],
+    ['category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+    ['category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
+]
+```
+
+<Warning>
+If a response is blocked by safety filters, Arrendito returns a friendly message asking the user to rephrase.
+</Warning>
+
+## Error Handling
+
+From app/Http/Controllers/ArrenditoChatController.php:106-126:
+
+```php
+$userFacingMessage = match (true) {
+    $statusCode === 429 => 
+        '¡Guau! 🐾 Estoy un poco cansado de tantas preguntas. ¡Dame un momento! 🐶💤',
+    
+    $statusCode === 403 => 
+        '¡Guau! 🐾 Mi llave de acceso tiene un problema. Contacta a arrendaoco@gmail.com.',
+    
+    $statusCode >= 500 => 
+        '¡Guau! 🐾 Los servidores de Google están teniendo problemas. Intenta en unos minutos.',
+    
+    default => 
+        '¡Guau! 🐾 Tuve un problemita. ¿Podrías intentar de nuevo?',
+};
+```
+
+## Frontend Integration
+
+### HTML Chat Widget
+
+```html
+<div id="arrendito-chat">
+    <div id="chat-messages"></div>
+    
+    <form id="chat-form">
+        <input 
+            type="text" 
+            id="user-message" 
+            placeholder="Pregúntale a Arrendito..."
+            maxlength="500"
+            required>
+        <button type="submit">Enviar 🐶</button>
+    </form>
+</div>
+```
+
+### JavaScript
+
+```javascript
+document.getElementById('chat-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const message = document.getElementById('user-message').value;
+    const messagesDiv = document.getElementById('chat-messages');
+    
+    // Show user message
+    messagesDiv.innerHTML += `<div class="user-msg">${message}</div>`;
+    
+    // Send to API
+    const response = await fetch('/arrendito/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ message })
+    });
+    
+    const data = await response.json();
+    
+    // Show Arrendito response (HTML formatted)
+    messagesDiv.innerHTML += `<div class="bot-msg">${data.response}</div>`;
+    
+    // Clear input
+    document.getElementById('user-message').value = '';
+});
+```
+
+## Advanced Features
+
+<Accordion title="Arrendito Mascot Customization">
+Admins can customize Arrendito's name via:
+
+**Route**: `POST /arrendito/actualizar`
+
+**Route**: `GET /arrendito/nombre`
+
+These routes use the `ArrenditoController` to manage mascot settings stored in the `arrendito_settings` table.
+</Accordion>
+
+<Accordion title="Testing Gemini API">
+Test route available at `GET /test-gemini` (routes/web.php:22-52) for debugging API connectivity.
+</Accordion>
+
+## Performance Considerations
+
+- **Timeout**: 30 seconds for Gemini API calls
+- **Rate Limiting**: Gemini Free tier has quotas (429 errors)
+- **Caching**: Consider caching common questions
+- **Property Limit**: Returns max 5 properties per search
+
+## Privacy & Security
+
+- **No authentication required**: Public chat for all visitors
+- **Message length**: Limited to 500 characters
+- **No conversation history**: Each message is stateless
+- **SSL verification disabled**: For development (`withoutVerifying()`)
+
+<Tip>
+In production, remove `withoutVerifying()` and enable SSL certificate verification.
+</Tip>
+
+## API Endpoints Summary
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/arrendito/chat` | No | Send message to Arrendito |
+| POST | `/arrendito/chat` | No | Web chat endpoint |
+| POST | `/arrendito/actualizar` | Yes | Update mascot name (admin) |
+| GET | `/arrendito/nombre` | Yes | Get mascot name |
+
+## Next Steps
+
+- [Search Properties](/features/properties)
+- [Create Favorites](/features/favorites)
+- [View Contracts](/features/contracts)

@@ -1,0 +1,412 @@
+---
+title: Reviews & Ratings
+description: Leave property reviews, rate landlords and properties, and moderate user feedback
+---
+
+## Overview
+
+ArrendaOco's review system allows tenants to rate and review properties they've experienced, helping future renters make informed decisions.
+
+## Review Model
+
+### Database Schema
+
+From migration `2026_02_04_003240_create_resenas_table.php`:
+
+```php
+Schema::create('resenas', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('usuario_id')
+        ->constrained('usuarios')
+        ->onDelete('cascade');
+    $table->foreignId('inmueble_id')
+        ->constrained('inmuebles')
+        ->onDelete('cascade');
+    $table->integer('puntuacion')->unsigned();
+    $table->text('comentario');
+    $table->timestamps();
+});
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `usuario_id` | foreign key | User who wrote the review |
+| `inmueble_id` | foreign key | Property being reviewed |
+| `puntuacion` | integer | Rating (1-5 stars) |
+| `comentario` | text | Review comment (max 1000 chars) |
+| `created_at` | timestamp | When review was created |
+
+## Creating a Review
+
+### Web Route
+
+**Route**: `POST /inmuebles/{inmueble}/resenas`
+
+**Access**: Authenticated users only
+
+**Form Example**:
+
+```html
+<form method="POST" action="/inmuebles/{{ $inmueble->id }}/resenas">
+    @csrf
+    <select name="puntuacion" required>
+        <option value="5">⭐⭐⭐⭐⭐ Excelente</option>
+        <option value="4">⭐⭐⭐⭐ Muy bueno</option>
+        <option value="3">⭐⭐⭐ Bueno</option>
+        <option value="2">⭐⭐ Regular</option>
+        <option value="1">⭐ Malo</option>
+    </select>
+    
+    <textarea name="comentario" maxlength="1000" required></textarea>
+    
+    <button type="submit">Publicar Reseña</button>
+</form>
+```
+
+### Implementation
+
+From app/Http/Controllers/ResenaController.php:28-57:
+
+```php
+public function store(Request $request, Inmueble $inmueble)
+{
+    $request->validate([
+        'puntuacion' => 'required|integer|min:1|max:5',
+        'comentario' => 'required|string|max:1000',
+    ]);
+    
+    // Prevent landlords from reviewing their own properties
+    if ($inmueble->propietario_id === Auth::id()) {
+        return back()->with('error', 'No puedes calificar tu propia propiedad.');
+    }
+    
+    // Prevent duplicate reviews
+    $resenaExistente = Resena::where('usuario_id', Auth::id())
+                            ->where('inmueble_id', $inmueble->id)
+                            ->first();
+    
+    if ($resenaExistente) {
+        return back()->with('error', 'Ya has calificado esta propiedad.');
+    }
+    
+    Resena::create([
+        'usuario_id' => Auth::id(),
+        'inmueble_id' => $inmueble->id,
+        'puntuacion' => $request->puntuacion,
+        'comentario' => $request->comentario,
+    ]);
+    
+    return back()->with('success', 'Tu reseña ha sido enviada con éxito.');
+}
+```
+
+<Warning>
+**Business Rules:**
+- Users cannot review their own properties
+- Users can only leave **one review per property**
+- Reviews are permanent (users can update but not delete their own reviews without admin)
+</Warning>
+
+### API Route
+
+**Route**: `POST /api/inmuebles/{inmueble}/resenas`
+
+**Request Example**:
+
+```json
+{
+  "puntuacion": 5,
+  "comentario": "Excelente ubicación cerca de la UTS, muy limpio y buen trato del propietario."
+}
+```
+
+**Response**:
+
+```json
+{
+  "id": 42,
+  "usuario_id": 5,
+  "inmueble_id": 12,
+  "puntuacion": 5,
+  "comentario": "Excelente ubicación cerca de la UTS...",
+  "created_at": "2026-03-04T15:30:00Z"
+}
+```
+
+## Updating a Review
+
+**Web Route**: `PUT /resenas/{resena}`
+
+**API Route**: `PUT /api/resenas/{resena}`
+
+**Authorization**: Only the review author
+
+**Implementation** (app/Http/Controllers/ResenaController.php:62-79):
+
+```php
+public function update(Request $request, Resena $resena)
+{
+    if ($resena->usuario_id !== Auth::id()) {
+        abort(403, 'No tienes permiso para editar esta reseña.');
+    }
+    
+    $request->validate([
+        'puntuacion' => 'required|integer|min:1|max:5',
+        'comentario' => 'required|string|max:1000',
+    ]);
+    
+    $resena->update([
+        'puntuacion' => $request->puntuacion,
+        'comentario' => $request->comentario,
+    ]);
+    
+    return back()->with('success', 'Reseña actualizada correctamente.');
+}
+```
+
+## Deleting a Review
+
+**Web Route**: `DELETE /resenas/{resena}`
+
+**API Route**: `DELETE /api/resenas/{resena}`
+
+**Authorization**: Review author or admin
+
+**Implementation** (app/Http/Controllers/ResenaController.php:84-95):
+
+```php
+public function destroy(Resena $resena)
+{
+    $user = Auth::user();
+    
+    // Author or admin can delete
+    if ($resena->usuario_id === $user->id || 
+        $user->es_admin || 
+        $user->tieneRol('admin')) {
+        $resena->delete();
+        return back()->with('success', 'Reseña eliminada correctamente.');
+    }
+    
+    abort(403, 'No tienes permiso para eliminar esta reseña.');
+}
+```
+
+## Viewing Reviews
+
+### For a Specific Property
+
+**API Route**: `GET /api/inmuebles/{inmueble}/resenas`
+
+**Response Example**:
+
+```json
+[
+  {
+    "id": 42,
+    "usuario": {
+      "id": 5,
+      "nombre": "Juan Pérez",
+      "foto_perfil": "/storage/perfil/juan.jpg"
+    },
+    "puntuacion": 5,
+    "comentario": "Excelente ubicación cerca de la UTS...",
+    "created_at": "2026-03-04T15:30:00Z"
+  },
+  {
+    "id": 38,
+    "usuario": {
+      "id": 8,
+      "nombre": "María González",
+      "foto_perfil": null
+    },
+    "puntuacion": 4,
+    "comentario": "Muy buena propiedad, solo le falta aire acondicionado.",
+    "created_at": "2026-02-15T10:20:00Z"
+  }
+]
+```
+
+### Single Review
+
+**API Route**: `GET /api/resenas/{resena}`
+
+Returns detailed information about a specific review.
+
+### In Property Details Page
+
+Reviews are automatically loaded when viewing a property.
+
+From app/Http/Controllers/InmuebleController.php:308-313:
+
+```php
+public function show(Inmueble $inmueble)
+{
+    $inmueble->load(['propietario', 'resenas.usuario']);
+    $imagenes = DB::table('imagenes_inmuebles')
+        ->where('inmueble_id', $inmueble->id)
+        ->get();
+    
+    return view('inmuebles.show', compact('inmueble', 'imagenes'));
+}
+```
+
+## Admin Moderation
+
+Admins can view all reviews for moderation purposes.
+
+**Route**: `GET /admin/resenas`
+
+**Access**: Admin only
+
+**Implementation** (app/Http/Controllers/ResenaController.php:15-23):
+
+```php
+public function index()
+{
+    if (!Auth::user()->es_admin && !Auth::user()->tieneRol('admin')) {
+        abort(403);
+    }
+    
+    $resenas = Resena::with(['usuario', 'inmueble'])
+        ->latest()
+        ->paginate(20);
+    
+    return view('admin.resenas.index', compact('resenas'));
+}
+```
+
+**Features**:
+- View all reviews system-wide
+- Delete inappropriate reviews
+- See which users are leaving reviews
+- Monitor property ratings
+
+## Calculating Average Rating
+
+You can calculate average ratings for properties:
+
+```php
+$averageRating = $inmueble->resenas()->avg('puntuacion');
+$totalReviews = $inmueble->resenas()->count();
+
+// Example: 4.6 stars (15 reviews)
+```
+
+**In Blade Template**:
+
+```blade
+@if($inmueble->resenas->count() > 0)
+    <div class="rating">
+        {{ number_format($inmueble->resenas->avg('puntuacion'), 1) }} ⭐
+        ({{ $inmueble->resenas->count() }} reseñas)
+    </div>
+@else
+    <p>Sin reseñas aún</p>
+@endif
+```
+
+## Review Display Example
+
+```html
+<div class="review">
+    <div class="review-header">
+        <img src="{{ $resena->usuario->foto_perfil }}" alt="Avatar">
+        <div>
+            <strong>{{ $resena->usuario->nombre }}</strong>
+            <div class="stars">
+                @for($i = 1; $i <= 5; $i++)
+                    @if($i <= $resena->puntuacion)
+                        <span class="star filled">⭐</span>
+                    @else
+                        <span class="star empty">☆</span>
+                    @endif
+                @endfor
+            </div>
+        </div>
+        <small>{{ $resena->created_at->diffForHumans() }}</small>
+    </div>
+    <p>{{ $resena->comentario }}</p>
+</div>
+```
+
+## Validation Rules
+
+### Create/Update Review
+
+- **puntuacion**: Required, integer, 1-5
+- **comentario**: Required, string, max 1000 characters
+
+### Custom Error Messages
+
+```php
+[
+    'puntuacion.required' => 'La calificación es obligatoria.',
+    'puntuacion.min' => 'La calificación mínima es 1 estrella.',
+    'puntuacion.max' => 'La calificación máxima es 5 estrellas.',
+    'comentario.required' => 'El comentario es obligatorio.',
+    'comentario.max' => 'El comentario no puede exceder 1000 caracteres.',
+]
+```
+
+## API Endpoints Summary
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/inmuebles/{id}/resenas` | No | List reviews for property |
+| GET | `/api/resenas/{id}` | No | Get single review |
+| POST | `/api/inmuebles/{id}/resenas` | Yes | Create review |
+| PUT | `/api/resenas/{id}` | Yes (author) | Update review |
+| DELETE | `/api/resenas/{id}` | Yes (author/admin) | Delete review |
+| DELETE | `/api/inmuebles/{id}/resenas` | Yes | Delete my review from property |
+
+<Accordion title="Alternative DELETE Endpoint">
+The API also supports deleting your own review from a property using:
+
+**Route**: `DELETE /api/inmuebles/{inmueble}/resenas`
+
+This finds and deletes the authenticated user's review for that property without needing the review ID.
+</Accordion>
+
+## Best Practices
+
+### For Users
+
+1. **Be honest**: Share your genuine experience
+2. **Be specific**: Mention what you liked and didn't like
+3. **Be respectful**: Avoid offensive language
+4. **Update if needed**: You can edit your review later
+
+### For Landlords
+
+1. **Respond to reviews**: Engage with feedback (feature can be added)
+2. **Improve based on feedback**: Use reviews to enhance properties
+3. **Don't review your own properties**: System prevents this
+
+### For Admins
+
+1. **Monitor for spam**: Check new reviews regularly
+2. **Remove inappropriate content**: Use delete function for offensive reviews
+3. **Ensure fairness**: Don't delete negative but honest reviews
+
+## Future Enhancements
+
+<Accordion title="Potential Features to Add">
+- **Review responses**: Allow landlords to reply to reviews
+- **Verified reviews**: Only tenants with contracts can review
+- **Photo uploads**: Attach images to reviews
+- **Helpful votes**: Users can mark reviews as helpful
+- **Report system**: Flag inappropriate reviews
+- **Review categories**: Rate different aspects (location, cleanliness, value)
+</Accordion>
+
+## Related Features
+
+- [View Properties](/features/properties)
+- [Admin Guide](/guides/admin-guide)
+
+## Next Steps
+
+- [Manage Favorites](/features/favorites)
+- [Create Contracts](/features/contracts)

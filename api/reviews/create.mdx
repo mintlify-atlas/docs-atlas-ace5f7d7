@@ -1,0 +1,152 @@
+---
+title: 'Create or Update Review'
+api: 'POST /api/inmuebles/{id}/resenas'
+description: 'Create a new review or update existing review for a property (authenticated users only)'
+---
+
+## Authentication
+
+This endpoint requires authentication via Sanctum token.
+
+```bash
+Authorization: Bearer {token}
+```
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  Property (inmueble) ID to review
+</ParamField>
+
+## Request Body
+
+<ParamField body="puntuacion" type="integer" required>
+  Rating from 1 to 5 stars
+</ParamField>
+
+<ParamField body="comentario" type="string" required>
+  Review comment text. Maximum 1000 characters.
+</ParamField>
+
+## Business Logic
+
+### Upsert Behavior
+
+This endpoint uses `updateOrCreate` logic:
+
+- **If user has no existing review** for this property → Creates new review
+- **If user already reviewed** this property → Updates the existing review
+
+This ensures **one review per user per property**.
+
+### Review Restrictions
+
+<Warning>
+The current implementation does NOT enforce past tenancy validation at the API level. Users can submit reviews without having a completed contract for the property.
+
+To implement tenant-only reviews, add validation to check for contracts with:
+- `inquilino_id` matching the authenticated user
+- Contract status of `completado` or `activo`
+</Warning>
+
+### Duplicate Prevention
+
+The database uses a composite unique constraint on `(usuario_id, inmueble_id)` to prevent multiple reviews from the same user.
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message
+</ResponseField>
+
+<ResponseField name="resena" type="object">
+  The created or updated review object
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.arrendaco.com/api/inmuebles/12/resenas \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "puntuacion": 5,
+    "comentario": "Excelente propiedad, muy limpia y en buena ubicación. El propietario fue muy profesional."
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "message": "Reseña guardada correctamente",
+  "resena": {
+    "id": 9,
+    "usuario_id": 15,
+    "inmueble_id": 12,
+    "puntuacion": 5,
+    "comentario": "Excelente propiedad, muy limpia y en buena ubicación. El propietario fue muy profesional.",
+    "created_at": "2026-03-04T14:30:00.000000Z",
+    "updated_at": "2026-03-04T14:30:00.000000Z"
+  }
+}
+```
+
+## Validation Rules
+
+| Field | Rules |
+|-------|-------|
+| puntuacion | Required, integer, between 1 and 5 |
+| comentario | Required, string, max 1000 characters |
+
+## Error Responses
+
+### Validation Error
+
+```json
+{
+  "message": "The puntuacion field must be between 1 and 5.",
+  "errors": {
+    "puntuacion": [
+      "The puntuacion field must be between 1 and 5."
+    ]
+  }
+}
+```
+
+**Status Code:** 422
+
+### Unauthenticated
+
+```json
+{
+  "message": "Unauthenticated."
+}
+```
+
+**Status Code:** 401
+
+## Alternative Endpoints
+
+### Using PUT Method
+
+The same endpoint is also available via PUT:
+
+```bash
+PUT /api/inmuebles/{id}/resenas
+```
+
+This provides semantic clarity when updating existing reviews, but functionally behaves identically to POST.
+
+## Rating System
+
+- **1 star:** Very poor experience
+- **2 stars:** Below expectations
+- **3 stars:** Average/acceptable
+- **4 stars:** Good experience
+- **5 stars:** Excellent experience
+
+## Implementation Reference
+
+See `app/Http/Controllers/Api/ResenaController.php:57`

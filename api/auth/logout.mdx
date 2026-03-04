@@ -1,0 +1,99 @@
+---
+title: "Logout"
+api: "POST /api/logout"
+description: "Revoke the current access token and end the user session"
+---
+
+## Overview
+
+Logs out the authenticated user by revoking their current access token. This endpoint requires authentication and invalidates only the token used in the request, not all tokens for the user.
+
+<Warning>
+  This endpoint requires authentication. Include a valid Bearer token in the Authorization header.
+</Warning>
+
+## Request
+
+### Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token obtained from login or register
+  
+  Format: `Bearer {token}`
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  application/json
+</ParamField>
+
+<ParamField header="Accept" type="string" required>
+  application/json
+</ParamField>
+
+### Body Parameters
+
+No body parameters required.
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message confirming the session has been closed
+</ResponseField>
+
+## Examples
+
+### Request
+
+```bash
+curl -X POST https://api.arrendaoco.com/api/logout \
+  -H "Authorization: Bearer 1|abcdefghijklmnopqrstuvwxyz1234567890" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json"
+```
+
+### Success Response (200 OK)
+
+```json
+{
+  "message": "Sesión cerrada"
+}
+```
+
+## Error Responses
+
+### 401 Unauthorized - Missing or Invalid Token
+
+Returned when no token is provided or the token is invalid/expired.
+
+```json
+{
+  "message": "Unauthenticated."
+}
+```
+
+### 401 Unauthorized - Token Already Revoked
+
+Returned when attempting to use a token that has already been revoked.
+
+```json
+{
+  "message": "Unauthenticated."
+}
+```
+
+## Important Notes
+
+<Note>
+  **Single Token Revocation**: This endpoint only revokes the specific token used in the request. If the user has multiple active sessions (tokens from different devices), those tokens remain valid.
+</Note>
+
+<Info>
+  **Post-Logout Behavior**: After logout, any subsequent requests using the revoked token will receive a 401 Unauthorized response. The user must login again to obtain a new token.
+</Info>
+
+## Implementation Details
+
+- Protected by `auth:sanctum` middleware (see routes/api.php:41-44)
+- Implemented in AuthController::logout (app/Http/Controllers/Api/AuthController.php:67-74)
+- Uses Laravel Sanctum's token revocation mechanism
+- Only deletes the current access token, not all user tokens

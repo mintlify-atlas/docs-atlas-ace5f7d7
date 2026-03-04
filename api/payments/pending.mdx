@@ -1,0 +1,99 @@
+---
+title: 'Get Pending Payments'
+api: 'GET /api/pagos/pendientes'
+description: 'List all pending and overdue payments for the authenticated user (tenant or landlord)'
+---
+
+## Authentication
+
+This endpoint requires authentication via Sanctum token.
+
+```bash
+Authorization: Bearer {token}
+```
+
+## Request
+
+No request body or query parameters required.
+
+## Response
+
+Returns an array of payment records with status `pendiente` or `vencido` for all contracts where the authenticated user is either the tenant or landlord.
+
+<ResponseField name="id" type="integer">
+  Payment record ID
+</ResponseField>
+
+<ResponseField name="contrato_id" type="integer">
+  Contract ID this payment belongs to
+</ResponseField>
+
+<ResponseField name="inmueble_titulo" type="string">
+  Property title from the related contract
+</ResponseField>
+
+<ResponseField name="monto" type="decimal">
+  Payment amount (monthly rent)
+</ResponseField>
+
+<ResponseField name="mes" type="integer">
+  Month number (1-12)
+</ResponseField>
+
+<ResponseField name="anio" type="integer">
+  Year (e.g., 2026)
+</ResponseField>
+
+<ResponseField name="estatus" type="enum">
+  Payment status: `pendiente` | `vencido`
+</ResponseField>
+
+<ResponseField name="fecha_pago" type="string">
+  Date string representing the payment due date
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET https://api.arrendaco.com/api/pagos/pendientes \
+  -H "Authorization: Bearer {token}" \
+  -H "Accept: application/json"
+```
+
+## Example Response
+
+```json
+[
+  {
+    "id": 15,
+    "contrato_id": 3,
+    "inmueble_titulo": "Apartamento en Polanco",
+    "monto": "15000.00",
+    "mes": 3,
+    "anio": 2026,
+    "estatus": "pendiente",
+    "fecha_pago": "2026-03-01"
+  },
+  {
+    "id": 14,
+    "contrato_id": 3,
+    "inmueble_titulo": "Apartamento en Polanco",
+    "monto": "15000.00",
+    "mes": 2,
+    "anio": 2026,
+    "estatus": "vencido",
+    "fecha_pago": "2026-02-01"
+  }
+]
+```
+
+## Response Details
+
+- Payments are ordered by year and month (ascending)
+- Only returns payments with status `pendiente` or `vencido`
+- Includes related property information via the contract relationship
+- Returns payments for all contracts where the user is involved (as tenant or landlord)
+
+## Implementation Reference
+
+See `app/Http/Controllers/Api/PagoController.php:110`

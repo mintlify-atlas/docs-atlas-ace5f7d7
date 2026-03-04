@@ -1,0 +1,328 @@
+---
+title: "Get Contract Statement"
+api: "GET /api/contratos/{id}/estado-cuenta"
+description: "Retrieve financial statement with payment history for a contract"
+---
+
+## Overview
+
+Returns a complete financial statement for a rental contract, including all payment records, totals, and balance information. Both landlords and tenants can access this endpoint for contracts they're involved in.
+
+## Authentication
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The contract ID to retrieve statement for
+</ParamField>
+
+## Response
+
+<ResponseField name="contrato_id" type="integer">
+  Contract identifier
+</ResponseField>
+
+<ResponseField name="resumen" type="object">
+  Financial summary object
+  
+  <Expandable title="Summary Fields">
+    <ResponseField name="total_pagado" type="decimal">
+      Total amount paid across all payments with status `pagado`
+    </ResponseField>
+    
+    <ResponseField name="total_pendiente" type="decimal">
+      Total outstanding amount (sum of `pendiente` and `vencido` payments)
+    </ResponseField>
+    
+    <ResponseField name="vencidos" type="integer">
+      Count of overdue payments
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagos" type="array">
+  Array of payment records, ordered by year and month
+  
+  <Expandable title="Payment Object">
+    <ResponseField name="id" type="integer">
+      Payment record ID
+    </ResponseField>
+    
+    <ResponseField name="contrato_id" type="integer">
+      Associated contract ID
+    </ResponseField>
+    
+    <ResponseField name="mes" type="integer">
+      Month (1-12)
+    </ResponseField>
+    
+    <ResponseField name="anio" type="integer">
+      Year (e.g., 2026)
+    </ResponseField>
+    
+    <ResponseField name="monto" type="decimal">
+      Payment amount
+    </ResponseField>
+    
+    <ResponseField name="estatus" type="string">
+      Payment status: `pendiente`, `pagado`, or `vencido`
+    </ResponseField>
+    
+    <ResponseField name="fecha_pago" type="timestamp" nullable>
+      Timestamp when payment was made (null if unpaid)
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="timestamp">
+      Payment record creation timestamp
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="timestamp">
+      Last update timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Response Example
+
+```json
+{
+  "contrato_id": 15,
+  "resumen": {
+    "total_pagado": 108000.00,
+    "total_pendiente": 54000.00,
+    "vencidos": 1
+  },
+  "pagos": [
+    {
+      "id": 201,
+      "contrato_id": 15,
+      "mes": 4,
+      "anio": 2026,
+      "monto": 18000.00,
+      "estatus": "pagado",
+      "fecha_pago": "2026-04-05T14:30:00.000000Z",
+      "created_at": "2026-03-04T15:30:00.000000Z",
+      "updated_at": "2026-04-05T14:30:00.000000Z"
+    },
+    {
+      "id": 202,
+      "contrato_id": 15,
+      "mes": 5,
+      "anio": 2026,
+      "monto": 18000.00,
+      "estatus": "pagado",
+      "fecha_pago": "2026-05-03T10:15:00.000000Z",
+      "created_at": "2026-03-04T15:30:00.000000Z",
+      "updated_at": "2026-05-03T10:15:00.000000Z"
+    },
+    {
+      "id": 203,
+      "contrato_id": 15,
+      "mes": 6,
+      "anio": 2026,
+      "monto": 18000.00,
+      "estatus": "vencido",
+      "fecha_pago": null,
+      "created_at": "2026-03-04T15:30:00.000000Z",
+      "updated_at": "2026-06-11T00:00:00.000000Z"
+    },
+    {
+      "id": 204,
+      "contrato_id": 15,
+      "mes": 7,
+      "anio": 2026,
+      "monto": 18000.00,
+      "estatus": "pendiente",
+      "fecha_pago": null,
+      "created_at": "2026-03-04T15:30:00.000000Z",
+      "updated_at": "2026-03-04T15:30:00.000000Z"
+    }
+  ]
+}
+```
+
+## Authorization
+
+Access is restricted to:
+- The property owner (`propietario_id`)
+- OR the tenant (`inquilino_id`)
+
+```php
+if (
+    $contrato->propietario_id !== $request->user()->id &&
+    $contrato->inquilino_id !== $request->user()->id
+) {
+    abort(403, 'No autorizado');
+}
+```
+
+## Payment Status Definitions
+
+- **pendiente**: Payment is due but not yet overdue
+- **pagado**: Payment has been completed
+- **vencido**: Payment is overdue (typically set by a scheduled job)
+
+## Calculation Logic
+
+### Total Paid
+
+```php
+$pagos->where('estatus', 'pagado')->sum('monto')
+```
+
+Sums the `monto` field for all payments with status `pagado`.
+
+### Total Pending
+
+```php
+$pagos->whereIn('estatus', ['pendiente', 'vencido'])->sum('monto')
+```
+
+Sums amounts for both pending and overdue payments.
+
+### Overdue Count
+
+```php
+$pagos->where('estatus', 'vencido')->count()
+```
+
+Counts number of payments with `vencido` status.
+
+## Error Responses
+
+<ResponseField name="403 Forbidden">
+  User is not authorized to view this contract's statement
+  ```json
+  {
+    "message": "No autorizado"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="404 Not Found">
+  Contract does not exist
+  ```json
+  {
+    "message": "No query results for model [App\\Models\\Contrato]."
+  }
+  ```
+</ResponseField>
+
+## PDF Export
+
+<Info>
+  A PDF version of the statement is available via a separate endpoint that generates and emails the statement.
+</Info>
+
+While not implemented in the current controller code, the routes file suggests PDF export functionality:
+
+```bash
+GET /api/contratos/{id}/estado-cuenta/excel
+```
+
+This endpoint (named "excel" but actually generates PDFs based on the controller) will:
+
+1. Generate a PDF using the `pdf.estado_cuenta` view
+2. Save it to `storage/estados_cuenta/contrato_{id}/estado_cuenta_{year}_{month}.pdf`
+3. Create or update an `EstadoCuenta` record
+4. Email the PDF to the tenant
+5. Return the PDF as a download
+
+### PDF Generation Details
+
+The PDF export uses:
+- **Library**: `barryvdh/laravel-dompdf`
+- **View Template**: `resources/views/pdf/estado_cuenta.blade.php`
+- **Paper Size**: Letter
+- **Storage Location**: `storage/app/estados_cuenta/contrato_{id}/`
+
+### Historical Statements
+
+PDF statements are saved with unique year/month combinations:
+
+```php
+EstadoCuenta::updateOrCreate(
+    [
+        'contrato_id' => $contrato->id,
+        'mes'  => $fecha->month,
+        'anio' => $fecha->year,
+    ],
+    [
+        'ruta_pdf'     => $pathRelativo,
+        'generado_por' => $request->user()->id,
+    ]
+);
+```
+
+This creates a historical archive of monthly statements.
+
+## Database Schema
+
+### estados_cuenta Table
+
+```php
+Schema::create('estados_cuenta', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('contrato_id')->constrained('contratos')->cascadeOnDelete();
+    $table->integer('mes');
+    $table->integer('anio');
+    $table->string('ruta_pdf');
+    $table->foreignId('generado_por')->constrained('usuarios');
+    $table->timestamps();
+    
+    $table->unique(['contrato_id', 'mes', 'anio']);
+});
+```
+
+The unique constraint ensures only one statement per contract per month.
+
+## Use Cases
+
+### Tenant Checking Balance
+
+```bash
+GET /api/contratos/15/estado-cuenta
+Authorization: Bearer {tenant_token}
+```
+
+Tenant views their payment history and outstanding balance.
+
+### Landlord Reviewing Income
+
+```bash
+GET /api/contratos/15/estado-cuenta
+Authorization: Bearer {landlord_token}
+```
+
+Landlord tracks received payments and identifies overdue amounts.
+
+### Pre-Cancellation Audit
+
+Before cancelling a contract, verify all payments are settled:
+
+```bash
+GET /api/contratos/15/estado-cuenta
+```
+
+Check that `resumen.total_pendiente` is 0 before calling the cancel endpoint.
+
+## Related Endpoints
+
+- [List Contracts](/api/contracts/list) - View all contracts
+- [Generate Payments](/api/payments/generate) - Create payment schedule
+- [Process Payment](/api/payments/process) - Record a payment
+- [Pending Payments](/api/payments/pending) - View all pending payments across contracts
+
+## Source Reference
+
+- Controller: `app/Http/Controllers/Api/ContratoController.php:105`
+- PDF Export: `app/Http/Controllers/Api/ContratoController.php:133`
+- Route: `routes/api.php:81`
+- Excel Export Route: `routes/api.php:99`
+- Model: `app/Models/Contrato.php`
+- Estados Cuenta Model: `app/Models/EstadoCuenta.php`
+- Migration: `database/migrations/2026_01_27_041714_create_estados_cuenta_table.php`

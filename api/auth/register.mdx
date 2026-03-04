@@ -1,0 +1,210 @@
+---
+title: "Register"
+api: "POST /api/register"
+description: "Create a new user account"
+---
+
+## Overview
+
+Registers a new user in the ArrendaOco platform. Creates an account with the specified role (defaults to "inquilino" if not provided) and returns a Laravel Sanctum access token.
+
+## Request
+
+### Headers
+
+<ParamField header="Content-Type" type="string" required>
+  application/json
+</ParamField>
+
+<ParamField header="Accept" type="string" required>
+  application/json
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="nombre" type="string" required>
+  User's full name (maximum 255 characters)
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  User's email address (must be unique and valid email format, maximum 255 characters)
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User's password (minimum 8 characters)
+</ParamField>
+
+<ParamField body="password_confirmation" type="string" required>
+  Password confirmation (must match password field)
+</ParamField>
+
+<ParamField body="rol" type="string" optional>
+  User's role assignment. Defaults to "inquilino" if not provided.
+  
+  Valid options:
+  - `inquilino` (default) - Tenant role
+  - `propietario` - Property owner role
+</ParamField>
+
+## Response
+
+<ResponseField name="token" type="string">
+  Laravel Sanctum access token for authenticating subsequent requests
+</ResponseField>
+
+<ResponseField name="usuario" type="object">
+  Newly created user information
+  
+  <Expandable title="usuario properties">
+    <ResponseField name="id" type="integer">
+      User's unique identifier
+    </ResponseField>
+    
+    <ResponseField name="nombre" type="string">
+      User's full name
+    </ResponseField>
+    
+    <ResponseField name="email" type="string">
+      User's email address
+    </ResponseField>
+    
+    <ResponseField name="foto_perfil" type="string" nullable>
+      URL to user's profile photo (null for new users)
+    </ResponseField>
+    
+    <ResponseField name="roles" type="array">
+      Array of role names assigned to the user
+    </ResponseField>
+    
+    <ResponseField name="es_admin" type="boolean">
+      Whether the user has admin privileges (always false for new registrations)
+    </ResponseField>
+    
+    <ResponseField name="estatus" type="string">
+      User account status ("activo" by default)
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      Timestamp when the user account was created
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+### Request - Basic Registration (Inquilino)
+
+```bash
+curl -X POST https://api.arrendaoco.com/api/register \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "nombre": "María González",
+    "email": "maria@example.com",
+    "password": "securePassword123",
+    "password_confirmation": "securePassword123"
+  }'
+```
+
+### Request - Register as Propietario
+
+```bash
+curl -X POST https://api.arrendaoco.com/api/register \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "nombre": "Carlos Rodríguez",
+    "email": "carlos@example.com",
+    "password": "securePassword123",
+    "password_confirmation": "securePassword123",
+    "rol": "propietario"
+  }'
+```
+
+### Success Response (201 Created)
+
+```json
+{
+  "token": "2|xyz123abcdefghijklmnopqrstuvwxyz",
+  "usuario": {
+    "id": 15,
+    "nombre": "María González",
+    "email": "maria@example.com",
+    "foto_perfil": null,
+    "roles": ["inquilino"],
+    "es_admin": false,
+    "estatus": "activo",
+    "created_at": "2026-03-04 14:25:30"
+  }
+}
+```
+
+## Error Responses
+
+### 422 Unprocessable Entity - Validation Errors
+
+#### Email Already Exists
+
+```json
+{
+  "message": "The email has already been taken.",
+  "errors": {
+    "email": [
+      "The email has already been taken."
+    ]
+  }
+}
+```
+
+#### Password Too Short
+
+```json
+{
+  "message": "The password field must be at least 8 characters.",
+  "errors": {
+    "password": [
+      "The password field must be at least 8 characters."
+    ]
+  }
+}
+```
+
+#### Password Confirmation Mismatch
+
+```json
+{
+  "message": "The password field confirmation does not match.",
+  "errors": {
+    "password": [
+      "The password field confirmation does not match."
+    ]
+  }
+}
+```
+
+#### Missing Required Fields
+
+```json
+{
+  "message": "The nombre field is required. (and 2 more errors)",
+  "errors": {
+    "nombre": [
+      "The nombre field is required."
+    ],
+    "email": [
+      "The email field is required."
+    ],
+    "password": [
+      "The password field is required."
+    ]
+  }
+}
+```
+
+## Using the Token
+
+After successful registration, include the returned token in the `Authorization` header for all protected endpoints:
+
+```bash
+Authorization: Bearer 2|xyz123abcdefghijklmnopqrstuvwxyz
+```

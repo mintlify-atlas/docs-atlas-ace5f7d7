@@ -1,0 +1,156 @@
+---
+title: "Renew Contract"
+api: "POST /api/contratos/{id}/renovar"
+description: "Renew an existing rental contract"
+---
+
+## Overview
+
+Renews an existing rental contract, extending its duration and optionally updating terms like rent amount or end date.
+
+<Warning>
+  This endpoint is defined in the routes but not yet implemented in the controller. The implementation details below represent the expected behavior based on the route definition.
+</Warning>
+
+## Authentication
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The contract ID to renew
+</ParamField>
+
+## Expected Request Body
+
+<ParamField body="fecha_fin" type="date" required>
+  New contract end date in format `YYYY-MM-DD`. Must be after the current end date.
+</ParamField>
+
+<ParamField body="renta_mensual" type="decimal">
+  Updated monthly rent amount. If not provided, keeps the current amount.
+</ParamField>
+
+<ParamField body="deposito" type="decimal">
+  Updated security deposit. If not provided, keeps the current amount.
+</ParamField>
+
+## Expected Request Example
+
+```json
+{
+  "fecha_fin": "2028-04-01",
+  "renta_mensual": 19500.00,
+  "deposito": 39000.00
+}
+```
+
+## Expected Validation Rules
+
+### Authorization
+
+Only the property owner (landlord) should be able to renew contracts.
+
+### Contract Status
+
+Contract must be in `activo` status to be renewed.
+
+### Date Validation
+
+The new `fecha_fin` must be:
+- After the current `fecha_fin`
+- In the future
+
+### Outstanding Payments
+
+Some implementations require all payments to be up-to-date before renewal. This validation should be considered.
+
+## Expected Response
+
+```json
+{
+  "id": 15,
+  "inmueble_id": 7,
+  "propietario_id": 3,
+  "inquilino_id": 42,
+  "fecha_inicio": "2026-04-01",
+  "fecha_fin": "2028-04-01",
+  "renta_mensual": 19500.00,
+  "deposito": 39000.00,
+  "estatus": "activo",
+  "created_at": "2026-03-04T15:30:00.000000Z",
+  "updated_at": "2027-03-15T10:20:00.000000Z"
+}
+```
+
+## Implementation Status
+
+<Note>
+  **Route Defined:** `routes/api.php:77`
+  
+  **Controller Method:** Not yet implemented
+  
+  To implement this endpoint, add the `renovar` method to `ContratoController`:
+  
+  ```php
+  public function renovar(Request $request, Contrato $contrato)
+  {
+      // Validate authorization
+      if ($contrato->propietario_id !== $request->user()->id) {
+          abort(403, 'Solo el propietario puede renovar este contrato');
+      }
+      
+      // Validate contract status
+      if ($contrato->estatus !== 'activo') {
+          abort(422, 'Solo se pueden renovar contratos activos');
+      }
+      
+      // Validate and update
+      $data = $request->validate([
+          'fecha_fin' => 'required|date|after:' . $contrato->fecha_fin,
+          'renta_mensual' => 'nullable|numeric|min:0',
+          'deposito' => 'nullable|numeric|min:0',
+      ]);
+      
+      $contrato->update($data);
+      
+      return response()->json($contrato);
+  }
+  ```
+</Note>
+
+## Workflow Considerations
+
+### Payment Schedule Extension
+
+When renewing a contract, you may need to generate additional payment records for the extended period:
+
+```bash
+POST /api/contratos/{id}/pagos/generar
+{
+  "meses": 12
+}
+```
+
+### Notification
+
+Consider sending notifications to the tenant about the contract renewal.
+
+### History Tracking
+
+Some implementations create renewal history records. Consider adding an `estado_cuenta` PDF generation or audit log entry.
+
+## Related Endpoints
+
+- [List Contracts](/api/contracts/list) - View all contracts
+- [Cancel Contract](/api/contracts/cancel) - Terminate a contract
+- [Generate Payments](/api/payments/generate) - Create payment schedule for renewed period
+
+## Source Reference
+
+- Route: `routes/api.php:77`
+- Controller: `app/Http/Controllers/Api/ContratoController.php` (method not yet implemented)
+- Model: `app/Models/Contrato.php`

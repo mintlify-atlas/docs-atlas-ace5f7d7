@@ -1,0 +1,364 @@
+---
+title: Authentication
+description: User registration, login, password recovery, and social authentication in ArrendaOco
+---
+
+## Overview
+
+ArrendaOco provides a comprehensive authentication system supporting traditional email/password authentication, social login (Google, Facebook), and password recovery functionality.
+
+## Authentication Methods
+
+### Email/Password Authentication
+
+Users can register and login using email and password credentials.
+
+#### Registration
+
+**Web Route**: `POST /registro`
+
+**API Route**: `POST /api/register`
+
+**Request Example**:
+
+```json
+{
+  "nombre": "Juan Pérez",
+  "email": "juan@example.com",
+  "password": "securePassword123",
+  "password_confirmation": "securePassword123",
+  "foto_perfil": null,
+  "rol": "inquilino"
+}
+```
+
+**Implementation** (routes/web.php:60-100):
+
+```php
+Route::post('/registro', function (\Illuminate\Http\Request $request) {
+    $datos = $request->validate([
+        'nombre' => 'required|string|max:255',
+        'email' => 'required|email|unique:usuarios,email',
+        'password' => 'required|string|min:8|confirmed',
+        'foto_perfil' => 'nullable|image|max:2048',
+    ]);
+
+    $usuario = \App\Models\Usuario::create([
+        'nombre' => $datos['nombre'],
+        'email' => $datos['email'],
+        'password' => Hash::make($datos['password']),
+        'estatus' => 'activo',
+    ]);
+
+    // Assign default role
+    $usuario->asignarRol('inquilino');
+    
+    Auth::login($usuario);
+    return redirect()->route('inicio');
+});
+```
+
+<Note>
+By default, new users are assigned the **inquilino** (tenant) role. Users can request to become **propietario** (landlord) from their profile.
+</Note>
+
+#### Login
+
+**Web Route**: `POST /login`
+
+**API Route**: `POST /api/login`
+
+**Request Example**:
+
+```json
+{
+  "email": "juan@example.com",
+  "password": "securePassword123"
+}
+```
+
+**API Response** (app/Http/Controllers/Api/AuthController.php:13-36):
+
+```json
+{
+  "token": "1|abcdefghijklmnopqrstuvwxyz...",
+  "usuario": {
+    "id": 1,
+    "nombre": "Juan Pérez",
+    "email": "juan@example.com",
+    "roles": ["inquilino"]
+  }
+}
+```
+
+**Implementation**:
+
+```php
+public function login(Request $request)
+{
+    $data = $request->validate([
+        'email' => 'required|email',
+        'password' => 'required|string',
+    ]);
+
+    if (!Auth::attempt($data)) {
+        return response()->json([
+            'message' => 'Credenciales inválidas'
+        ], 401);
+    }
+
+    $usuario = Auth::user();
+    $token = $usuario->createToken('arrendaoco-token')->plainTextToken;
+
+    return response()->json([
+        'token' => $token,
+        'usuario' => new UserResource($usuario),
+    ]);
+}
+```
+
+#### Logout
+
+**Web Route**: `POST /logout`
+
+**API Route**: `POST /api/logout` (requires authentication)
+
+**Implementation** (app/Http/Controllers/Api/AuthController.php:67-74):
+
+```php
+public function logout(Request $request)
+{
+    $request->user()->currentAccessToken()->delete();
+
+    return response()->json([
+        'message' => 'Sesión cerrada'
+    ]);
+}
+```
+
+### Social Authentication
+
+ArrendaOco supports OAuth authentication with Google and Facebook.
+
+**Routes** (routes/web.php:17-19):
+
+```php
+Route::get('/auth/{provider}', [SocialAuthController::class, 'redirectToProvider'])
+    ->name('social.login');
+    
+Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'handleProviderCallback'])
+    ->name('social.callback');
+```
+
+**Usage Example**:
+
+```html
+<a href="/auth/google">Login with Google</a>
+<a href="/auth/facebook">Login with Facebook</a>
+```
+
+<Tip>
+Social authentication automatically creates a user account if it doesn't exist, using the email from the OAuth provider.
+</Tip>
+
+### Password Recovery
+
+Users can reset their password via email verification.
+
+**Step 1: Request Reset Link**
+
+**Route**: `POST /olvide-password`
+
+```json
+{
+  "email": "juan@example.com"
+}
+```
+
+**Step 2: Reset Password**
+
+**Route**: `POST /reset-password`
+
+```json
+{
+  "token": "...",
+  "email": "juan@example.com",
+  "password": "newPassword123",
+  "password_confirmation": "newPassword123"
+}
+```
+
+**Implementation** (routes/web.php:244-267):
+
+```php
+Route::post('/reset-password', function (\Illuminate\Http\Request $request) {
+    $request->validate([
+        'token' => 'required',
+        'email' => 'required|email',
+        'password' => 'required|min:8|confirmed',
+    ]);
+    
+    $status = Password::reset(
+        $request->only('email', 'password', 'password_confirmation', 'token'),
+        function ($user, $password) {
+            $user->forceFill([
+                'password' => Hash::make($password)
+            ])->setRememberToken(Str::random(60));
+            $user->save();
+        }
+    );
+    
+    return redirect()->route('login')->with('status', __($status));
+});
+```
+
+## User Model
+
+### Database Schema
+
+From migration `2026_01_25_181218_create_usuarios_table.php`:
+
+```php
+Schema::create('usuarios', function (Blueprint $table) {
+    $table->id();
+    $table->string('nombre');
+    $table->string('email')->unique();
+    $table->string('password');
+    $table->string('telefono')->nullable();
+    $table->boolean('es_admin')->default(false);
+    $table->enum('estatus', ['activo', 'inactivo'])->default('activo');
+    $table->timestamps();
+});
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | bigint | Primary key |
+| `nombre` | string | User's full name |
+| `email` | string | Unique email address |
+| `password` | string | Hashed password |
+| `telefono` | string | Optional phone number |
+| `es_admin` | boolean | Admin flag (default: false) |
+| `estatus` | enum | User status: `activo`, `inactivo` |
+| `created_at` | timestamp | Registration date |
+| `updated_at` | timestamp | Last update |
+
+## API Authentication (Sanctum)
+
+ArrendaOco uses **Laravel Sanctum** for API token authentication.
+
+### Getting Authenticated User
+
+**Route**: `GET /api/me` (requires `auth:sanctum`)
+
+**Response**:
+
+```json
+{
+  "id": 1,
+  "nombre": "Juan Pérez",
+  "email": "juan@example.com",
+  "es_admin": false,
+  "estatus": "activo",
+  "roles": ["inquilino", "propietario"]
+}
+```
+
+**Implementation** (routes/api.php:45-47):
+
+```php
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/me', function () {
+        return new \App\Http\Resources\UserResource(auth()->user()->load('roles'));
+    });
+});
+```
+
+### Using Authentication Token
+
+Include the token in the `Authorization` header:
+
+```bash
+curl -H "Authorization: Bearer 1|abcd..." \
+     https://arrendaoco.com/api/me
+```
+
+## Role-Based Access Control
+
+ArrendaOco implements a flexible role system:
+
+- **inquilino** (Tenant): Can search properties, create favorites, leave reviews
+- **propietario** (Landlord): Can publish properties, manage contracts
+- **admin**: Full system access
+
+### Assigning Roles
+
+```php
+$usuario->asignarRol('propietario');
+```
+
+### Checking Roles
+
+```php
+if ($usuario->tieneRol('propietario')) {
+    // Allow property creation
+}
+```
+
+<Warning>
+Users can have multiple roles simultaneously. The role system is implemented via a pivot table with the `roles` table.
+</Warning>
+
+## Validation Rules
+
+### Registration Validation
+
+- **nombre**: Required, string, max 255 characters
+- **email**: Required, valid email, unique in `usuarios` table
+- **password**: Required, min 8 characters, must be confirmed
+- **foto_perfil**: Optional, image file, max 2MB
+
+### Login Validation
+
+- **email**: Required, valid email format
+- **password**: Required, string
+
+### Custom Error Messages
+
+From routes/web.php:67-77:
+
+```php
+[
+    'nombre.required' => 'El nombre es obligatorio.',
+    'email.unique' => 'Este correo ya está registrado.',
+    'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+    'password.confirmed' => 'Las contraseñas no coinciden.',
+    'foto_perfil.max' => 'La imagen no debe pesar más de 2MB.',
+]
+```
+
+## Security Features
+
+<Accordion title="Session Management">
+- Sessions are regenerated on login to prevent fixation attacks
+- Tokens are invalidated on logout
+- Remember tokens are rotated on password reset
+</Accordion>
+
+<Accordion title="Password Security">
+- Passwords are hashed using `bcrypt` (Laravel default)
+- Minimum 8 characters required
+- Password confirmation required on registration and reset
+</Accordion>
+
+<Accordion title="Email Verification">
+Password reset links are sent via email and include a secure token that expires after a set time period.
+</Accordion>
+
+## Next Steps
+
+- [Browse Properties](/features/properties)
+- [Create Rental Contracts](/features/contracts)
+- [Payment Tracking](/features/payments)

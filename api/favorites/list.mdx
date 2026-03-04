@@ -1,0 +1,380 @@
+---
+title: "List Favorites"
+api: "GET /api/favoritos"
+description: "Retrieve the authenticated user's favorite properties"
+---
+
+## Overview
+
+This endpoint returns a paginated list of properties that the authenticated user has marked as favorites. Properties are returned in reverse chronological order (most recently added first) with complete property details.
+
+## Authentication
+
+<Warning>
+  This endpoint requires authentication using Laravel Sanctum.
+  
+  Include the authentication token in the request:
+  ```
+  Authorization: Bearer {token}
+  ```
+</Warning>
+
+## Request
+
+### Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  The page number for pagination
+</ParamField>
+
+### Example Request
+
+```bash cURL
+curl -X GET "https://arrendaoco.com/api/favoritos" \
+  -H "Authorization: Bearer {token}" \
+  -H "Accept: application/json"
+```
+
+```javascript JavaScript
+const response = await fetch('https://arrendaoco.com/api/favoritos', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer ' + token,
+    'Accept': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+## Response
+
+<ResponseField name="data" type="array">
+  Array of favorite property objects
+  
+  <Expandable title="Property Object">
+    <ResponseField name="id" type="integer">
+      Property unique identifier
+    </ResponseField>
+    
+    <ResponseField name="titulo" type="string">
+      Property title
+    </ResponseField>
+    
+    <ResponseField name="descripcion" type="string">
+      Property description
+    </ResponseField>
+    
+    <ResponseField name="direccion" type="string">
+      Property address
+    </ResponseField>
+    
+    <ResponseField name="ciudad" type="string">
+      City name
+    </ResponseField>
+    
+    <ResponseField name="estado" type="string">
+      State name
+    </ResponseField>
+    
+    <ResponseField name="codigo_postal" type="string">
+      Postal code
+    </ResponseField>
+    
+    <ResponseField name="renta_mensual" type="number">
+      Monthly rent amount
+    </ResponseField>
+    
+    <ResponseField name="deposito" type="number">
+      Security deposit amount
+    </ResponseField>
+    
+    <ResponseField name="estatus" type="string">
+      Property status (disponible, rentado, mantenimiento)
+    </ResponseField>
+    
+    <ResponseField name="tipo" type="string">
+      Property type (casa, departamento, cuarto, local, terreno)
+    </ResponseField>
+    
+    <ResponseField name="habitaciones" type="integer">
+      Number of bedrooms
+    </ResponseField>
+    
+    <ResponseField name="banos" type="integer">
+      Number of bathrooms
+    </ResponseField>
+    
+    <ResponseField name="metros" type="number">
+      Property size in square meters
+    </ResponseField>
+    
+    <ResponseField name="imagen_portada" type="string">
+      Cover image URL
+    </ResponseField>
+    
+    <ResponseField name="latitud" type="number">
+      Latitude coordinate
+    </ResponseField>
+    
+    <ResponseField name="longitud" type="number">
+      Longitude coordinate
+    </ResponseField>
+    
+    <ResponseField name="video_youtube" type="string">
+      YouTube video URL
+    </ResponseField>
+    
+    <ResponseField name="video_thumbnail" type="string">
+      Video thumbnail URL
+    </ResponseField>
+    
+    <ResponseField name="video_titulo" type="string">
+      Video title
+    </ResponseField>
+    
+    <ResponseField name="propietario" type="object">
+      Property owner information
+      
+      <Expandable title="Owner Object">
+        <ResponseField name="id" type="integer">
+          Owner user ID
+        </ResponseField>
+        
+        <ResponseField name="nombre" type="string">
+          Owner name
+        </ResponseField>
+        
+        <ResponseField name="email" type="string">
+          Owner email
+        </ResponseField>
+        
+        <ResponseField name="foto_perfil" type="string">
+          Owner profile photo URL
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="imagenes" type="array">
+      Array of property images
+      
+      <Expandable title="Image Object">
+        <ResponseField name="id" type="integer">
+          Image ID
+        </ResponseField>
+        
+        <ResponseField name="url" type="string">
+          Image URL
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="resenas" type="array">
+      Array of property reviews
+      
+      <Expandable title="Review Object">
+        <ResponseField name="id" type="integer">
+          Review ID
+        </ResponseField>
+        
+        <ResponseField name="usuario" type="string">
+          Reviewer name
+        </ResponseField>
+        
+        <ResponseField name="puntuacion" type="integer">
+          Rating (1-5)
+        </ResponseField>
+        
+        <ResponseField name="comentario" type="string">
+          Review comment
+        </ResponseField>
+        
+        <ResponseField name="fecha" type="string">
+          Human-readable date (e.g., "2 days ago")
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="promedio_calificacion" type="number">
+      Average rating across all reviews
+    </ResponseField>
+    
+    <ResponseField name="total_resenas" type="integer">
+      Total number of reviews
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      Property creation timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="links" type="object">
+  Pagination links
+  
+  <Expandable title="Links Object">
+    <ResponseField name="first" type="string">
+      URL to first page
+    </ResponseField>
+    
+    <ResponseField name="last" type="string">
+      URL to last page
+    </ResponseField>
+    
+    <ResponseField name="prev" type="string">
+      URL to previous page (null if on first page)
+    </ResponseField>
+    
+    <ResponseField name="next" type="string">
+      URL to next page (null if on last page)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Pagination metadata
+  
+  <Expandable title="Meta Object">
+    <ResponseField name="current_page" type="integer">
+      Current page number
+    </ResponseField>
+    
+    <ResponseField name="from" type="integer">
+      First item number on current page
+    </ResponseField>
+    
+    <ResponseField name="to" type="integer">
+      Last item number on current page
+    </ResponseField>
+    
+    <ResponseField name="total" type="integer">
+      Total number of favorite properties
+    </ResponseField>
+    
+    <ResponseField name="per_page" type="integer">
+      Number of items per page (15)
+    </ResponseField>
+    
+    <ResponseField name="last_page" type="integer">
+      Total number of pages
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Success Response (200 OK)
+
+```json
+{
+  "data": [
+    {
+      "id": 42,
+      "titulo": "Departamento cerca de la UTS",
+      "descripcion": "Departamento amueblado con 2 habitaciones",
+      "direccion": "Av. Universidad Tecnológica 123",
+      "ciudad": "Ocosingo",
+      "estado": "Chiapas",
+      "codigo_postal": "29950",
+      "renta_mensual": 3500,
+      "deposito": 3500,
+      "estatus": "disponible",
+      "tipo": "departamento",
+      "habitaciones": 2,
+      "banos": 1,
+      "metros": 65,
+      "imagen_portada": "https://arrendaoco.com/storage/inmuebles/depto_uts.jpg",
+      "latitud": 16.9030,
+      "longitud": -92.0935,
+      "video_youtube": null,
+      "video_thumbnail": null,
+      "video_titulo": null,
+      "propietario": {
+        "id": 15,
+        "nombre": "Juan Pérez",
+        "email": "juan@example.com",
+        "foto_perfil": "https://arrendaoco.com/storage/profiles/juan.jpg"
+      },
+      "imagenes": [
+        {
+          "id": 101,
+          "url": "https://arrendaoco.com/storage/inmuebles/img1.jpg"
+        },
+        {
+          "id": 102,
+          "url": "https://arrendaoco.com/storage/inmuebles/img2.jpg"
+        }
+      ],
+      "resenas": [
+        {
+          "id": 23,
+          "usuario": "María López",
+          "puntuacion": 5,
+          "comentario": "Excelente ubicación, muy cerca de la universidad",
+          "fecha": "1 week ago"
+        }
+      ],
+      "promedio_calificacion": 5,
+      "total_resenas": 1,
+      "created_at": "2026-02-15 10:30:00"
+    }
+  ],
+  "links": {
+    "first": "https://arrendaoco.com/api/favoritos?page=1",
+    "last": "https://arrendaoco.com/api/favoritos?page=2",
+    "prev": null,
+    "next": "https://arrendaoco.com/api/favoritos?page=2"
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "to": 15,
+    "total": 23,
+    "per_page": 15,
+    "last_page": 2
+  }
+}
+```
+
+### Error Response (401 Unauthorized)
+
+```json
+{
+  "message": "Unauthenticated."
+}
+```
+
+## Implementation Details
+
+<Info>
+  **Source Code Reference**
+  
+  - Controller: `app/Http/Controllers/Api/FavoritoController.php:17`
+  - Route: `routes/api.php:53`
+  - Model: `app/Models/Favorito.php`
+  - Resource: `app/Http/Resources/InmuebleResource.php`
+</Info>
+
+### Key Features
+
+- **Pagination**: Results are paginated with 15 items per page
+- **Sorting**: Favorites are ordered by creation date (newest first)
+- **Full Details**: Returns complete property information including images, reviews, and owner data
+- **Relationship Loading**: Automatically loads related data (owner, images, reviews)
+
+### Query Implementation
+
+```php
+$favoritos = Auth::user()->inmueblesFavoritos()->latest()->paginate(15);
+return InmuebleResource::collection($favoritos);
+```
+
+## Related Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Toggle Favorite" icon="heart" href="/api/favorites/toggle">
+    Add or remove a property from favorites
+  </Card>
+  
+  <Card title="List Properties" icon="building" href="/api/properties/list">
+    Browse all available properties
+  </Card>
+</CardGroup>

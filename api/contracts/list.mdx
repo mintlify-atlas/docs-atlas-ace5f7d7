@@ -1,0 +1,152 @@
+---
+title: "List Contracts"
+api: "GET /api/contratos"
+description: "Retrieve all rental contracts for the authenticated user"
+---
+
+## Overview
+
+Returns a list of all rental contracts where the authenticated user is either the property owner (landlord) or the tenant. Each contract includes property details, participant information, dates, and financial terms.
+
+## Authentication
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="array">
+  Array of contract objects
+
+  <Expandable title="Contract Object">
+    <ResponseField name="id" type="integer">
+      Unique contract identifier
+    </ResponseField>
+
+    <ResponseField name="inmueble_id" type="integer">
+      Property ID associated with this contract
+    </ResponseField>
+
+    <ResponseField name="inmueble_titulo" type="string">
+      Property title/name
+    </ResponseField>
+
+    <ResponseField name="rutas_imagen" type="array">
+      Array of property image URLs
+    </ResponseField>
+
+    <ResponseField name="arrendador_id" type="integer">
+      Landlord (property owner) user ID
+    </ResponseField>
+
+    <ResponseField name="arrendador_nombre" type="string">
+      Landlord full name
+    </ResponseField>
+
+    <ResponseField name="inquilino_id" type="integer">
+      Tenant user ID
+    </ResponseField>
+
+    <ResponseField name="inquilino_nombre" type="string">
+      Tenant full name
+    </ResponseField>
+
+    <ResponseField name="fecha_inicio" type="date">
+      Contract start date (YYYY-MM-DD)
+    </ResponseField>
+
+    <ResponseField name="fecha_fin" type="date" nullable>
+      Contract end date (YYYY-MM-DD). Null for indefinite contracts
+    </ResponseField>
+
+    <ResponseField name="monto_mensual" type="decimal">
+      Monthly rent amount
+    </ResponseField>
+
+    <ResponseField name="deposito" type="decimal" nullable>
+      Security deposit amount
+    </ResponseField>
+
+    <ResponseField name="estado" type="string">
+      Contract status: `activo`, `finalizado`, or `cancelado`
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Response Example
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "inmueble_id": 42,
+      "inmueble_titulo": "Apartamento Moderno en Polanco",
+      "rutas_imagen": [
+        "/storage/inmuebles/42/foto1.jpg",
+        "/storage/inmuebles/42/foto2.jpg"
+      ],
+      "arrendador_id": 5,
+      "arrendador_nombre": "María González",
+      "inquilino_id": 12,
+      "inquilino_nombre": "Juan Pérez",
+      "fecha_inicio": "2025-01-01",
+      "fecha_fin": "2026-01-01",
+      "monto_mensual": 15000.00,
+      "deposito": 30000.00,
+      "estado": "activo"
+    },
+    {
+      "id": 2,
+      "inmueble_id": 38,
+      "inmueble_titulo": "Casa en Coyoacán",
+      "rutas_imagen": [],
+      "arrendador_id": 12,
+      "arrendador_nombre": "Juan Pérez",
+      "inquilino_id": 18,
+      "inquilino_nombre": "Ana Martínez",
+      "fecha_inicio": "2024-06-01",
+      "fecha_fin": null,
+      "monto_mensual": 22000.00,
+      "deposito": 44000.00,
+      "estado": "activo"
+    }
+  ]
+}
+```
+
+## Implementation Details
+
+### Query Logic
+
+The endpoint uses an OR condition to fetch contracts:
+
+```php
+Contrato::with(['inmueble', 'propietario', 'inquilino'])
+    ->where('propietario_id', $usuario->id)
+    ->orWhere('inquilino_id', $usuario->id)
+    ->latest()
+    ->get();
+```
+
+This returns contracts where the user is:
+- The property owner (`propietario_id`)
+- OR the tenant (`inquilino_id`)
+
+### Ordering
+
+Contracts are returned in descending order by creation date (newest first).
+
+### Related Endpoints
+
+- [Create Contract](/api/contracts/create) - Initiate a new rental
+- [Get Statement](/api/contracts/statement) - View payment history
+- [Renew Contract](/api/contracts/renew) - Extend an existing contract
+- [Cancel Contract](/api/contracts/cancel) - Terminate a contract
+
+### Source Reference
+
+- Controller: `app/Http/Controllers/Api/ContratoController.php:25`
+- Route: `routes/api.php:75`
+- Model: `app/Models/Contrato.php`

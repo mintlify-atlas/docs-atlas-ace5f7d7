@@ -1,0 +1,156 @@
+---
+title: 'Delete Review'
+api: 'DELETE /api/resenas/{id}'
+description: 'Delete a review (by author or admin)'
+---
+
+## Authentication
+
+This endpoint requires authentication via Sanctum token.
+
+```bash
+Authorization: Bearer {token}
+```
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  Review ID to delete
+</ParamField>
+
+## Authorization
+
+A review can be deleted by:
+
+1. **The review author** (usuario_id matches authenticated user)
+2. **Admin users** (users with `es_admin` flag or `admin` role)
+
+Returns 403 error if user is not authorized.
+
+## Request
+
+No request body required.
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X DELETE https://api.arrendaco.com/api/resenas/9 \
+  -H "Authorization: Bearer {token}" \
+  -H "Accept: application/json"
+```
+
+## Example Response
+
+```json
+{
+  "message": "Reseña eliminada"
+}
+```
+
+## Error Responses
+
+### Unauthorized User
+
+```json
+{
+  "message": "No autorizado"
+}
+```
+
+**Status Code:** 403
+
+### Review Not Found
+
+```json
+{
+  "message": "No query results for model [App\\Models\\Resena] {id}"
+}
+```
+
+**Status Code:** 404
+
+## Alternative Endpoint: Delete by Property
+
+You can also delete your review using the property ID instead of the review ID:
+
+```bash
+DELETE /api/inmuebles/{id}/resenas
+```
+
+This endpoint:
+- Finds the review by `usuario_id` and `inmueble_id`
+- Only allows the author to delete (no admin privileges)
+- Returns 404 if no review exists for that property
+
+### Example Request
+
+```bash
+curl -X DELETE https://api.arrendaco.com/api/inmuebles/12/resenas \
+  -H "Authorization: Bearer {token}" \
+  -H "Accept: application/json"
+```
+
+### Example Response
+
+```json
+{
+  "message": "Reseña eliminada correctamente"
+}
+```
+
+### Error: No Review Found
+
+```json
+{
+  "message": "No tienes una reseña en este inmueble"
+}
+```
+
+**Status Code:** 404
+
+## Admin Moderation
+
+Admins can delete any review for moderation purposes:
+
+- Inappropriate content
+- Spam or fake reviews
+- Violation of community guidelines
+- Legal requirements
+
+The authorization check in the controller (`app/Http/Controllers/Api/ResenaController.php:105`) verifies:
+
+```php
+if ($resena->usuario_id !== Auth::id() && 
+    !Auth::user()->es_admin && 
+    !Auth::user()->tieneRol('admin')) {
+    return response()->json(['message' => 'No autorizado'], 403);
+}
+```
+
+## Cascade Deletion
+
+Reviews are automatically deleted when:
+
+- The associated user account is deleted (`onDelete('cascade')`)
+- The associated property is deleted (`onDelete('cascade')`)
+
+This is defined in the database migration (`database/migrations/2026_02_04_003240_create_resenas_table.php:16-17`).
+
+## Best Practices
+
+- **Confirm deletion** with user before executing
+- **Log deletions** for audit trail (especially admin deletions)
+- **Show reason** for admin deletions (consider adding a moderation notes field)
+- **Notify user** when their review is deleted by admin
+
+## Implementation Reference
+
+See:
+- `app/Http/Controllers/Api/ResenaController.php:103` (delete by ID)
+- `app/Http/Controllers/Api/ResenaController.php:117` (delete by property)

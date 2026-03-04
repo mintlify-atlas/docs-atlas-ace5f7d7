@@ -1,0 +1,835 @@
+---
+title: Landlord Guide
+description: Complete guide for property owners to list and manage rental properties on ArrendaOco
+---
+
+# Landlord Guide
+
+Welcome, property owners! This comprehensive guide will help you successfully list, manage, and rent your properties through ArrendaOco.
+
+## Becoming a Landlord
+
+### Account Requirements
+
+Before you can list properties, you need:
+
+<Steps>
+  <Step title="Create an Account">
+    Register as a user on ArrendaOco if you haven't already. All users start as tenants by default.
+  </Step>
+  
+  <Step title="Upgrade to Landlord Role">
+    Navigate to your profile (`/perfil`) and click the **"¡Quiero Publicar!"** button to receive the Propietario (Landlord) role.
+  </Step>
+  
+  <Step title="Verify Role Assignment">
+    You'll see the "Propietario" badge in your profile. You can now access property management features.
+  </Step>
+</Steps>
+
+<Note>
+You can have both Tenant and Landlord roles simultaneously. This allows you to search for properties while also managing your own listings.
+</Note>
+
+### Understanding Landlord Permissions
+
+As a landlord, you can:
+- Create new property listings
+- Edit your own properties
+- Delete your own properties
+- View and manage rental contracts
+- Track rental payments
+- Respond to reviews
+- Access "Mis Propiedades" (My Properties) dashboard
+
+## Creating Property Listings
+
+### Accessing the Publishing Form
+
+<Steps>
+  <Step title="Navigate to Create Form">
+    Click "Publicar Inmueble" from your profile or navigate directly to `/publicar`
+  </Step>
+  
+  <Step title="Verify Landlord Access">
+    Only users with the Propietario role can access this page
+  </Step>
+</Steps>
+
+### Required Property Information
+
+To create a listing, you must provide:
+
+#### Basic Details
+- **Property Name** (nombre): Maximum 255 characters - make it descriptive and appealing
+- **Property Type** (tipo): Select from:
+  - Casa (House)
+  - Departamento (Apartment)
+  - Cuarto (Room)
+- **Full Description** (descripcion): Detailed text describing the property, amenities, and unique features
+- **Complete Address** (direccion): Full street address in Ocosingo
+
+#### Financial Terms
+- **Monthly Rent** (precio): Amount in Mexican Pesos (MXN)
+- **Security Deposit** (deposito): Automatically set equal to monthly rent
+
+#### Property Specifications
+- **Number of Bedrooms** (habitaciones): Integer value
+- **Number of Bathrooms** (banos): Integer value
+- **Square Meters** (metros): Total area in m²
+
+#### Location Data
+- **Latitude** (latitud): For map display (optional but recommended)
+- **Longitude** (longitud): For map display (optional but recommended)
+- **City**: Automatically set to "Ocosingo"
+- **State**: Automatically set to "Chiapas"
+- **Postal Code**: Automatically set to "29950"
+
+#### Media
+- **Photos** (imagenes): 
+  - **Required**: Minimum 1, maximum 10 images
+  - **Format**: Image files only
+  - **Size**: Maximum 10MB per image
+  - **Usage**: First image becomes the main cover photo
+  - **Storage**: All images stored in gallery
+
+- **YouTube Video** (video_youtube) - Optional:
+  - Valid YouTube URL (any format)
+  - System automatically extracts:
+    - Video ID
+    - Title
+    - Channel name
+    - Description
+    - Duration
+    - Views and likes count
+    - Thumbnail image
+    - Publication date
+
+### Step-by-Step Publishing Process
+
+<Steps>
+  <Step title="Fill Out Basic Information">
+    Enter property name, type, and address. Use a compelling name that highlights key features like "Modern 2BR Apartment - City Center".
+  </Step>
+  
+  <Step title="Set Pricing">
+    Input the monthly rent amount. The deposit will automatically match this value. Be competitive with market rates in Ocosingo.
+  </Step>
+  
+  <Step title="Specify Property Details">
+    Enter number of bedrooms, bathrooms, and total square meters. Be accurate - tenants will verify during viewings.
+  </Step>
+  
+  <Step title="Write Compelling Description">
+    Describe:
+    - Unique features and amenities
+    - Nearby locations (schools, markets, transportation)
+    - Included utilities or services
+    - Pet policies
+    - Parking availability
+    - Recent renovations or upgrades
+  </Step>
+  
+  <Step title="Add Location Coordinates">
+    If you know the latitude/longitude, add them for accurate map display. Tenants use this to verify location.
+  </Step>
+  
+  <Step title="Upload Photos">
+    Select 1-10 high-quality images:
+    - First photo is crucial (main listing image)
+    - Include: living areas, bedrooms, kitchen, bathrooms
+    - Show best features and natural lighting
+    - Ensure images are clear and well-lit
+  </Step>
+  
+  <Step title="Add Video Tour (Optional)">
+    Paste any YouTube video URL showing the property. The system supports formats like:
+    - `https://youtu.be/VIDEO_ID`
+    - `https://www.youtube.com/watch?v=VIDEO_ID`
+    - `https://www.youtube.com/embed/VIDEO_ID`
+    - `https://www.youtube.com/shorts/VIDEO_ID`
+  </Step>
+  
+  <Step title="Review and Submit">
+    Double-check all information for accuracy, then click submit. Your property will be immediately available with status "disponible".
+  </Step>
+</Steps>
+
+<Tip>
+Properties with high-quality photos and video tours receive significantly more inquiries. Invest time in creating professional-looking media.
+</Tip>
+
+### Video Features
+
+The YouTube integration provides:
+
+- **Automatic Metadata Extraction**: Title, channel, description, duration, views, likes
+- **Thumbnail Display**: High-quality preview image
+- **Embedded Player**: Video plays directly on property page
+- **Refresh Capability**: Update video stats anytime
+
+<Note>
+If you don't have a YouTube API key configured, the system uses free YouTube oEmbed service for basic video information.
+</Note>
+
+## Managing Your Properties
+
+### Accessing Your Property Dashboard
+
+<Steps>
+  <Step title="Navigate to My Properties">
+    Go to `/mis-propiedades` or click "Mis Propiedades" from your profile
+  </Step>
+  
+  <Step title="View Your Listings">
+    See all properties you've created, displaying:
+    - Main photo
+    - Title and address
+    - Current status (disponible/rentado)
+    - Quick action buttons
+    - 10 properties per page with pagination
+  </Step>
+</Steps>
+
+### Search Your Properties
+
+Use the search feature to filter your listings by:
+- Property title
+- Address
+- Property type
+
+This is helpful when you manage multiple properties.
+
+### Property Status
+
+Your properties can have different statuses:
+
+- **Disponible** (Available): Visible to all users, appears in search results
+- **Rentado** (Rented): Automatically set when a contract is created; hidden from public search
+
+<Warning>
+You cannot manually change status from "rentado" to "disponible" if an active contract exists. The property automatically returns to "disponible" when the contract is finalized.
+</Warning>
+
+## Editing Property Details
+
+### When to Edit
+
+Update your listings when:
+- Rent prices change
+- You improve or renovate the property
+- Contact information changes
+- You want to add more photos
+- Better video becomes available
+- Description needs clarification
+
+### Editing Process
+
+<Steps>
+  <Step title="Access Edit Form">
+    From "Mis Propiedades", click the edit button on the property you want to modify, or navigate to `/inmuebles/{id}/editar`
+  </Step>
+  
+  <Step title="Verify Permissions">
+    Only the property owner and administrators can edit listings
+  </Step>
+  
+  <Step title="Update Information">
+    Modify any of the following:
+    - Property name
+    - Property type
+    - Monthly rent (deposit updates automatically)
+    - Description
+    - Address
+    - Bedrooms, bathrooms, square meters
+    - Location coordinates
+    - YouTube video URL
+  </Step>
+  
+  <Step title="Add More Photos">
+    Upload additional images to the existing gallery (new photos are added, not replaced)
+  </Step>
+  
+  <Step title="Save Changes">
+    Click "Actualizar" - changes take effect immediately
+  </Step>
+</Steps>
+
+### Managing Property Photos
+
+- **Adding Photos**: Upload new images during editing - they're added to the gallery
+- **Main Photo**: The first photo uploaded during creation remains the cover image
+- **Photo Limit**: Maximum 10 images total per property
+- **Deleting Photos**: Individual photo deletion requires accessing the image management interface
+
+### Refreshing Video Data
+
+If your YouTube video stats are outdated:
+
+<Steps>
+  <Step title="Access Property Page">
+    View your property detail page
+  </Step>
+  
+  <Step title="Click Refresh Button">
+    Use the video refresh function (available to owners and admins)
+  </Step>
+  
+  <Step title="Updated Information">
+    Current views, likes, and other metadata are fetched from YouTube
+  </Step>
+</Steps>
+
+## Deleting Properties
+
+### Deletion Requirements
+
+You can delete properties when:
+- No active contracts exist for the property
+- You're the property owner or an administrator
+
+<Steps>
+  <Step title="Navigate to My Properties">
+    Go to your property dashboard
+  </Step>
+  
+  <Step title="Select Property to Delete">
+    Click the delete button on the property listing
+  </Step>
+  
+  <Step title="Confirm Deletion">
+    Confirm the security prompt - this action is permanent
+  </Step>
+  
+  <Step title="Verification Check">
+    System automatically verifies no active contracts exist before allowing deletion
+  </Step>
+</Steps>
+
+<Warning>
+Deletion is permanent and cannot be undone. The property and all associated images are removed from the database. If you just want to temporarily hide a property, wait for contracts to end rather than deleting.
+</Warning>
+
+## Managing Rental Applications
+
+### Receiving Inquiries
+
+When tenants view your property:
+- They can see your name as the property owner
+- Your contact information is displayed
+- Tenants will reach out directly to schedule viewings
+
+### Evaluation Process
+
+<Steps>
+  <Step title="Screen Potential Tenants">
+    When contacted:
+    - Verify employment and income
+    - Check references
+    - Discuss rental terms
+    - Schedule property viewing
+  </Step>
+  
+  <Step title="Conduct Property Showing">
+    Show the property and answer questions
+  </Step>
+  
+  <Step title="Select Tenant">
+    Choose the best candidate based on your criteria
+  </Step>
+  
+  <Step title="Prepare Contract">
+    Work with the system to create the formal rental contract
+  </Step>
+</Steps>
+
+## Creating Rental Contracts
+
+### Contract Information
+
+When you've selected a tenant, create a contract with:
+
+- **Landlord** (propietario_id): Automatically set to you
+- **Tenant** (inquilino_id): The selected renter
+- **Property** (inmueble_id): The specific property being rented
+- **Start Date** (fecha_inicio): Lease begins
+- **End Date** (fecha_fin): Lease ends
+- **Monthly Rent**: Amount agreed upon
+- **Deposit**: Security deposit amount
+
+### What Happens After Contract Creation
+
+<Steps>
+  <Step title="Status Change">
+    Property status automatically updates to "Rentado" (Rented)
+  </Step>
+  
+  <Step title="Visibility Update">
+    Property is removed from public search results
+  </Step>
+  
+  <Step title="Payment Schedule Generated">
+    System automatically creates monthly payment records for the entire contract duration
+  </Step>
+  
+  <Step title="Contract Activated">
+    Contract status set to "Activo" (Active)
+  </Step>
+</Steps>
+
+<Note>
+Once a property has an active contract, it cannot be edited or deleted until the contract is finalized.
+</Note>
+
+## Tracking Payments
+
+### Automatic Payment Generation
+
+The system creates monthly payment records (mensualidades) including:
+- Base rent amount
+- Due date for each month
+- Initial status: "Pendiente" (Pending)
+
+### Payment Management
+
+For each monthly payment:
+
+<Steps>
+  <Step title="Tenant Makes Payment">
+    Tenant pays rent through your agreed method
+  </Step>
+  
+  <Step title="Mark as Paid">
+    Update payment status to "Completado" with:
+    - Actual payment date
+    - Payment reference number
+  </Step>
+  
+  <Step title="System Records">
+    Payment is logged in the contract's financial history
+  </Step>
+</Steps>
+
+### Late Payment Handling
+
+The system automatically:
+- Compares due date with current date
+- Adds configured late fees (recargos) to overdue payments
+- Calculates total amount owed including penalties
+- Displays outstanding balance
+
+### Viewing Financial Reports
+
+Access detailed payment information:
+
+<Steps>
+  <Step title="Open Contract">
+    Navigate to the active contract details
+  </Step>
+  
+  <Step title="View Statement of Account">
+    See chronological list showing:
+    - All monthly payments
+    - Payment status (paid/pending)
+    - Late fees applied
+    - Total balance
+    - Payment history
+  </Step>
+  
+  <Step title="Generate Reports">
+    Download financial statements as:
+    - **PDF**: Professional formatted document
+    - **Excel**: Spreadsheet for further analysis
+  </Step>
+</Steps>
+
+<Tip>
+Regularly review payment status and contact tenants about upcoming due dates to minimize late payments.
+</Tip>
+
+## Income Tracking
+
+### Monitoring Revenue
+
+Track your rental income:
+
+- **Per Property**: View individual property financial performance
+- **Total Portfolio**: See combined income from all properties
+- **Time Periods**: Filter by month, quarter, or year
+- **Income Sources**:
+  - Regular rent payments
+  - Late fee collections
+  - Deposit returns/retentions
+
+### Financial Best Practices
+
+<AccordionGroup>
+  <Accordion title="Maintain Records">
+    Keep detailed records of all transactions, payments, and expenses for tax purposes and dispute resolution.
+  </Accordion>
+  
+  <Accordion title="Issue Receipts">
+    Provide payment receipts to tenants for every rent payment received.
+  </Accordion>
+  
+  <Accordion title="Track Expenses">
+    Document property maintenance, repairs, and improvements to calculate net income.
+  </Accordion>
+  
+  <Accordion title="Review Regularly">
+    Check payment status weekly to identify issues early and maintain cash flow.
+  </Accordion>
+</AccordionGroup>
+
+## Managing Reviews
+
+### Understanding Reviews
+
+Tenants who have completed rental contracts can:
+- Leave star ratings (calificación)
+- Write detailed comments
+- Share their rental experience
+
+### How Reviews Affect Your Listings
+
+- **Average Rating**: Displayed prominently on property page
+- **Review Count**: Shows social proof and popularity
+- **Detailed Feedback**: Visible to all potential tenants
+- **Real-time Updates**: Ratings recalculate immediately
+
+### Responding to Reviews
+
+While you cannot directly reply to reviews in the system:
+
+<Steps>
+  <Step title="Monitor Reviews">
+    Regularly check property pages for new tenant feedback
+  </Step>
+  
+  <Step title="Learn from Feedback">
+    Use constructive criticism to improve:
+    - Property maintenance
+    - Communication responsiveness
+    - Amenities and services
+  </Step>
+  
+  <Step title="Address Issues">
+    If reviews mention problems, take corrective action and communicate changes to future tenants
+  </Step>
+</Steps>
+
+### Dealing with Inappropriate Reviews
+
+If a review violates community guidelines:
+
+- Contact platform administrators
+- Provide evidence if review contains false information
+- Admins can moderate and remove inappropriate content
+
+<Warning>
+Never pressure tenants to remove or modify honest reviews. Focus on providing excellent service to earn positive feedback naturally.
+</Warning>
+
+## Managing Multiple Properties
+
+### Organization Strategies
+
+<CardGroup cols={2}>
+  <Card title="Use Search" icon="magnifying-glass">
+    Utilize the property search feature to quickly find specific listings when you have many properties
+  </Card>
+  
+  <Card title="Descriptive Names" icon="tag">
+    Give properties clear, memorable names that include location or distinctive features
+  </Card>
+  
+  <Card title="Regular Updates" icon="calendar">
+    Schedule weekly reviews of all listings to ensure information stays current
+  </Card>
+  
+  <Card title="Track Contracts" icon="file-contract">
+    Monitor which properties have active contracts and upcoming lease expirations
+  </Card>
+</CardGroup>
+
+### Portfolio Dashboard
+
+From "Mis Propiedades" you can:
+- See all properties at a glance
+- Identify available vs. rented properties
+- Access quick edit/delete actions
+- Navigate to individual property details
+
+### Scaling Your Business
+
+As your portfolio grows:
+
+<Steps>
+  <Step title="Standardize Listings">
+    Create a template for descriptions to maintain consistency
+  </Step>
+  
+  <Step title="Professional Photography">
+    Invest in quality photos for all properties to increase inquiries
+  </Step>
+  
+  <Step title="Competitive Pricing">
+    Research market rates in different Ocosingo neighborhoods
+  </Step>
+  
+  <Step title="Responsive Communication">
+    Reply quickly to tenant inquiries to reduce vacancy time
+  </Step>
+</Steps>
+
+## Contract Completion
+
+### Finalizing a Lease
+
+When the rental period ends:
+
+<Steps>
+  <Step title="Verify Payment Status">
+    Ensure tenant has paid all rent and any late fees (debt must be zero)
+  </Step>
+  
+  <Step title="Conduct Move-Out Inspection">
+    Assess property condition and document any damages
+  </Step>
+  
+  <Step title="Process Deposit">
+    Return deposit minus any deductions for damages
+  </Step>
+  
+  <Step title="Close Contract">
+    Update contract status to finalized in the system
+  </Step>
+  
+  <Step title="Property Becomes Available">
+    Status automatically reverts to "disponible" and property returns to search results
+  </Step>
+</Steps>
+
+<Warning>
+The system requires zero outstanding balance before allowing contract finalization. Resolve any payment disputes before closing the lease.
+</Warning>
+
+### Contract Renewal
+
+If tenant wants to continue renting:
+- Finalize the current contract
+- Create a new contract with updated terms
+- Property briefly returns to "disponible" before new contract activates
+
+## Best Practices for Success
+
+### Creating Attractive Listings
+
+<AccordionGroup>
+  <Accordion title="Write Compelling Descriptions">
+    Highlight unique features, recent upgrades, and neighborhood benefits. Use specific details rather than generic statements.
+  </Accordion>
+  
+  <Accordion title="Price Competitively">
+    Research similar properties in Ocosingo. Consider property condition, location, and amenities when setting rent.
+  </Accordion>
+  
+  <Accordion title="High-Quality Photos">
+    Use good lighting, clean spaces before photographing, and show all rooms. First photo should be the most attractive view.
+  </Accordion>
+  
+  <Accordion title="Add Video Tours">
+    Properties with videos get more engagement. Even simple smartphone videos are better than none.
+  </Accordion>
+  
+  <Accordion title="Accurate Information">
+    Be truthful about property condition, measurements, and amenities. Misrepresentation leads to lost trust and poor reviews.
+  </Accordion>
+  
+  <Accordion title="Complete All Fields">
+    Fill out every optional field including coordinates for map display and detailed descriptions.
+  </Accordion>
+</AccordionGroup>
+
+### Tenant Relations
+
+<AccordionGroup>
+  <Accordion title="Quick Responses">
+    Reply to inquiries within 24 hours. Fast communication shows professionalism and reduces lost opportunities.
+  </Accordion>
+  
+  <Accordion title="Clear Communication">
+    Set expectations about rent due dates, maintenance procedures, and house rules from the beginning.
+  </Accordion>
+  
+  <Accordion title="Maintain Properties">
+    Address repair requests promptly. Well-maintained properties earn better reviews and retain tenants longer.
+  </Accordion>
+  
+  <Accordion title="Respect Privacy">
+    Give proper notice before property visits. Respect tenant's right to quiet enjoyment of the property.
+  </Accordion>
+  
+  <Accordion title="Fair Treatment">
+    Apply policies consistently and handle deposit returns fairly to build positive reputation.
+  </Accordion>
+</AccordionGroup>
+
+### Maximizing Occupancy
+
+<Steps>
+  <Step title="Start Marketing Early">
+    List properties 30-45 days before availability to allow time for tenant search
+  </Step>
+  
+  <Step title="Be Flexible with Showings">
+    Accommodate viewing schedules, including evenings and weekends
+  </Step>
+  
+  <Step title="Keep Listings Updated">
+    Refresh photos seasonally and update descriptions with new amenities
+  </Step>
+  
+  <Step title="Encourage Reviews">
+    Politely ask satisfied tenants to leave feedback after lease completion
+  </Step>
+  
+  <Step title="Competitive Advantages">
+    Offer value-adds like included utilities, parking, or furnished options if market appropriate
+  </Step>
+</Steps>
+
+## Admin Interactions
+
+### When Admins May Contact You
+
+Platform administrators may reach out regarding:
+- Listing guideline violations
+- Tenant complaints or disputes
+- Payment or contract issues
+- Verification of property ownership
+- Technical problems with your account
+
+### Admin Capabilities
+
+Administrators can:
+- View all your properties
+- Edit your listings if necessary
+- Delete properties that violate policies
+- Moderate reviews
+- Access your contracts and payment records
+- Generate reports including your properties
+
+<Note>
+Admins act to maintain platform quality and resolve disputes. Cooperate with admin requests and maintain professional communication.
+</Note>
+
+## Troubleshooting
+
+### Can't Create Listing
+
+**Problem**: Access denied when trying to publish
+
+**Solutions**:
+- Verify you have the Propietario role (check profile for badge)
+- Click "¡Quiero Publicar!" in profile to upgrade
+- Ensure account status is "Activo"
+
+### Photo Upload Fails
+
+**Problem**: Images won't upload
+
+**Solutions**:
+- Check file size (max 10MB per image)
+- Verify file format is image (jpg, png, etc.)
+- Ensure you're not exceeding 10 image limit
+- Try reducing image resolution
+- Check internet connection stability
+
+### Video Not Displaying
+
+**Problem**: YouTube video doesn't show on listing
+
+**Solutions**:
+- Verify URL format is correct
+- Check video is publicly accessible (not private)
+- Try different YouTube URL format
+- Use video refresh feature to re-fetch metadata
+- Ensure video hasn't been deleted from YouTube
+
+### Can't Delete Property
+
+**Problem**: Deletion fails with error
+
+**Solutions**:
+- Check for active contracts on the property
+- Finalize any existing contracts first
+- Verify you're the property owner
+- Contact admin if issue persists
+
+### Payments Not Tracking
+
+**Problem**: Payment status not updating
+
+**Solutions**:
+- Ensure contract is active
+- Verify you're marking correct payment record
+- Check you have permission to update this contract
+- Contact admin if technical issue suspected
+
+## Legal & Compliance
+
+### Property Listing Guidelines
+
+Ensure your listings:
+- Contain accurate, truthful information
+- Don't discriminate based on protected categories
+- Show actual photos of the property
+- Clearly state all fees and requirements
+- Comply with local Ocosingo rental regulations
+
+### Data Privacy
+
+- Tenant information is protected and confidential
+- Use contact details only for legitimate rental purposes
+- Don't share tenant data with unauthorized parties
+- Platform uses secure HTTPS encryption
+
+### Rental Regulations
+
+As a landlord in Ocosingo:
+- Follow local housing and safety codes
+- Maintain properties in habitable condition
+- Respect tenant rights under Mexican law
+- Keep proper financial records for taxes
+- Provide safe, discrimination-free housing
+
+<Warning>
+ArrendaOco facilitates property listing and tenant connection but you remain responsible for legal compliance with all local, state, and federal rental regulations.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Property Management" icon="building" href="/features/properties">
+    Learn about managing property listings
+  </Card>
+  
+  <Card title="Contract Creation" icon="file-contract" href="/features/contracts">
+    Create and manage rental contracts
+  </Card>
+  
+  <Card title="Payment Tracking" icon="credit-card" href="/features/payments">
+    Track rent payments and income
+  </Card>
+  
+  <Card title="Review Management" icon="star" href="/features/reviews">
+    Monitor and respond to property reviews
+  </Card>
+</CardGroup>
+
+---
+
+<Note>
+This guide reflects current ArrendaOco features. Platform capabilities may expand over time. Check documentation regularly for updates.
+</Note>

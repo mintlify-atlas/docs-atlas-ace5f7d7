@@ -1,122 +1,135 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "ArrendaOco",
+  "theme": "almond",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#040404",
+    "light": "#ef370f",
+    "dark": "#f79d72"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "https://media.brand.dev/ef7cdb24-cf48-44b6-9439-4288899142b4.png",
+  "logo": {
+    "light": "https://media.brand.dev/69d705f4-5e9b-4d51-bd5f-4788b2d5c4d2.svg",
+    "dark": "https://media.brand.dev/69d705f4-5e9b-4d51-bd5f-4788b2d5c4d2.svg"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/edagrex-sketch/Arrendaoco"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/edagrex-sketch/Arrendaoco"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
+              "introduction",
               "quickstart",
-              "development"
+              "installation"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Features",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "features/authentication",
+              "features/properties",
+              "features/contracts",
+              "features/payments",
+              "features/reviews",
+              "features/favorites",
+              "features/arrendito-ai"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "User Guides",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "guides/tenant-guide",
+              "guides/landlord-guide",
+              "guides/admin-guide"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Configuration",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "configuration/environment",
+              "configuration/database",
+              "configuration/mail",
+              "configuration/storage"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Authentication",
             "pages": [
-              "api-reference/introduction"
+              "api/auth/login",
+              "api/auth/register",
+              "api/auth/logout"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Properties",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/properties/list",
+              "api/properties/create",
+              "api/properties/update",
+              "api/properties/delete",
+              "api/properties/search"
+            ]
+          },
+          {
+            "group": "Contracts",
+            "pages": [
+              "api/contracts/list",
+              "api/contracts/create",
+              "api/contracts/renew",
+              "api/contracts/cancel",
+              "api/contracts/statement"
+            ]
+          },
+          {
+            "group": "Payments",
+            "pages": [
+              "api/payments/pending",
+              "api/payments/generate",
+              "api/payments/process"
+            ]
+          },
+          {
+            "group": "Reviews",
+            "pages": [
+              "api/reviews/list",
+              "api/reviews/create",
+              "api/reviews/update",
+              "api/reviews/delete"
+            ]
+          },
+          {
+            "group": "Favorites",
+            "pages": [
+              "api/favorites/list",
+              "api/favorites/toggle"
+            ]
+          },
+          {
+            "group": "Arrendito AI",
+            "pages": [
+              "api/arrendito/chat"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

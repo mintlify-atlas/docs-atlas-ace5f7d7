@@ -1,0 +1,142 @@
+---
+title: 'Update Review'
+api: 'PUT /api/resenas/{id}'
+description: 'Update an existing review (only by the review author)'
+---
+
+## Authentication
+
+This endpoint requires authentication via Sanctum token.
+
+```bash
+Authorization: Bearer {token}
+```
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  Review ID to update
+</ParamField>
+
+## Authorization
+
+**Only the author of the review can update it.**
+
+- The authenticated user's ID must match the review's `usuario_id`
+- Returns 403 error if user is not the author
+
+## Request Body
+
+<ParamField body="puntuacion" type="integer" required>
+  Updated rating from 1 to 5 stars
+</ParamField>
+
+<ParamField body="comentario" type="string" required>
+  Updated review comment text. Maximum 1000 characters.
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message
+</ResponseField>
+
+<ResponseField name="resena" type="object">
+  The updated review object
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X PUT https://api.arrendaco.com/api/resenas/9 \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "puntuacion": 4,
+    "comentario": "Actualizo mi reseña: buena propiedad pero hubo algunos problemas menores de mantenimiento."
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "message": "Reseña actualizada",
+  "resena": {
+    "id": 9,
+    "usuario_id": 15,
+    "inmueble_id": 12,
+    "puntuacion": 4,
+    "comentario": "Actualizo mi reseña: buena propiedad pero hubo algunos problemas menores de mantenimiento.",
+    "created_at": "2026-03-04T14:30:00.000000Z",
+    "updated_at": "2026-03-04T15:45:00.000000Z"
+  }
+}
+```
+
+## Validation Rules
+
+| Field | Rules |
+|-------|-------|
+| puntuacion | Required, integer, between 1 and 5 |
+| comentario | Required, string, max 1000 characters |
+
+## Error Responses
+
+### Unauthorized User
+
+```json
+{
+  "message": "No autorizado"
+}
+```
+
+**Status Code:** 403
+
+### Validation Error
+
+```json
+{
+  "message": "The comentario field is required.",
+  "errors": {
+    "comentario": [
+      "The comentario field is required."
+    ]
+  }
+}
+```
+
+**Status Code:** 422
+
+### Review Not Found
+
+```json
+{
+  "message": "No query results for model [App\\Models\\Resena] {id}"
+}
+```
+
+**Status Code:** 404
+
+## Difference from Create Endpoint
+
+While the `POST /api/inmuebles/{id}/resenas` endpoint uses upsert logic (create or update), this endpoint:
+
+- Updates a review by its specific ID
+- Requires knowledge of the review ID
+- Provides explicit authorization checks
+- Returns 404 if the review doesn't exist
+
+Use this endpoint when you have the review ID and want to ensure the review exists before updating.
+
+## Best Practices
+
+- **Fetch existing review first** to pre-populate the update form
+- **Show edit history** (consider adding `edited_at` field for transparency)
+- **Validate ownership** on the client side to improve UX
+- **Handle 404 errors** gracefully if review was deleted
+
+## Implementation Reference
+
+See `app/Http/Controllers/Api/ResenaController.php:81`

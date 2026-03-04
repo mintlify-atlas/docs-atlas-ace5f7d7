@@ -1,0 +1,265 @@
+---
+title: "Introduction to ArrendaOco"
+description: "A comprehensive rental property management platform built with Laravel 12 and Vue 3 for landlords, tenants, and administrators in Ocosingo, Chiapas."
+---
+
+## Welcome to ArrendaOco
+
+ArrendaOco is a modern, full-featured SaaS platform designed to streamline rental property management in Ocosingo, Chiapas, Mexico. Built with cutting-edge technologies, it connects property owners with potential tenants while providing powerful tools for contract management, payment tracking, and AI-powered assistance.
+
+<Note>
+  ArrendaOco combines traditional rental management with modern AI capabilities through ROCO, your friendly Beagle assistant powered by Google Gemini.
+</Note>
+
+## Key Features
+
+ArrendaOco offers comprehensive functionality across multiple modules:
+
+### Property Management
+
+- **Property Listings**: Create and publish detailed property listings with photos, videos, and location data
+- **Multi-image Galleries**: Upload multiple property images with automatic storage management
+- **YouTube Integration**: Embed property tour videos directly from YouTube
+- **Advanced Search**: Filter properties by price, type, location, and amenities
+- **Interactive Maps**: Display property locations using latitude/longitude coordinates
+- **Favorites System**: Save and manage favorite properties with personal notes
+
+### Contract & Payment Management
+
+- **Digital Contracts**: Generate and manage rental contracts linking landlords, tenants, and properties
+- **Automated Payment Tracking**: Auto-generate monthly payment records for active contracts
+- **Late Fee Calculation**: Automatic surcharge calculation for overdue payments
+- **Account Statements**: Detailed financial history for each contract
+- **PDF & Excel Export**: Download account statements in professional formats using DomPDF and Maatwebsite Excel
+
+### User Management
+
+- **Role-Based Access**: Support for Admin, Landlord (Propietario), and Tenant (Inquilino) roles
+- **Multi-Role Users**: Users can be both landlords and tenants simultaneously
+- **Social Authentication**: Login with Google or Facebook using Laravel Socialite
+- **Profile Management**: Update personal information and profile photos
+- **Password Recovery**: Secure password reset via email tokens
+
+### AI Assistant - ROCO
+
+- **Intelligent Chat**: Natural language conversations powered by Google Gemini 2.5 Flash
+- **Smart Property Search**: ROCO intelligently searches and recommends properties based on user queries
+- **Context-Aware Responses**: Understands Ocosingo geography (UTS, Centro, neighborhoods)
+- **Personality-Driven**: Friendly Beagle mascot with conversational responses
+
+### Reviews & Ratings
+
+- **Property Reviews**: Tenants can rate and review properties after their contracts
+- **Review Management**: Edit or delete your own reviews
+- **Rating Aggregation**: Automatic calculation of average property ratings
+- **Moderation Tools**: Admins can remove inappropriate reviews
+
+### Reporting & Analytics
+
+- **User Reports**: Export user statistics by role and registration date
+- **Property Reports**: Generate reports on property availability and popularity
+- **Income Reports**: Financial breakdowns by period with payment and surcharge details
+- **Excel & PDF Export**: Professional report generation for stakeholders
+
+## Who Is ArrendaOco For?
+
+### Landlords (Propietarios)
+
+Property owners use ArrendaOco to:
+- Publish and manage their rental properties
+- Track contracts and tenant information
+- Monitor payment status and generate account statements
+- Receive reviews and build reputation
+
+### Tenants (Inquilinos)
+
+Renters use ArrendaOco to:
+- Browse available properties with advanced filters
+- Save favorite listings for comparison
+- View contract details and payment history
+- Chat with ROCO to find the perfect property
+- Leave reviews after their rental experience
+
+### Administrators
+
+Platform administrators can:
+- Oversee all users, properties, and contracts
+- Generate comprehensive business reports
+- Moderate content and manage user accounts
+- Access system-wide analytics and metrics
+
+## Technology Stack
+
+ArrendaOco is built with modern, production-ready technologies:
+
+### Backend
+
+- **Laravel 12**: Latest version of the popular PHP framework (PHP 8.2+)
+- **MySQL/PostgreSQL**: Robust relational database support
+- **Laravel Sanctum**: API authentication for SPA and mobile apps
+- **Laravel Socialite**: Social login integration (Google, Facebook)
+- **DomPDF**: Professional PDF generation for contracts and statements
+- **Maatwebsite Excel**: Excel import/export functionality
+
+### Frontend
+
+- **Vue 3**: Progressive JavaScript framework for reactive UIs
+- **Tailwind CSS 4**: Utility-first CSS framework with modern features
+- **Vite**: Fast build tool with hot module replacement
+- **Axios**: HTTP client for API communication
+- **Vue Router 4**: Official routing library for Vue
+
+### AI & External Services
+
+- **Google Gemini 2.5 Flash**: Conversational AI for the ROCO chatbot
+- **YouTube Data API**: Video metadata extraction for property tours
+- **Google OAuth 2.0**: Social authentication
+- **Facebook OAuth**: Social authentication
+
+### Development Tools
+
+- **Composer 2.x**: PHP dependency management
+- **NPM**: JavaScript package management
+- **Laravel Pint**: Opinionated PHP code style fixer
+- **Pest**: Modern PHP testing framework
+- **Laravel Sail**: Docker-based development environment (optional)
+
+## Architecture Overview
+
+ArrendaOco follows Laravel's MVC (Model-View-Controller) architecture with clear separation of concerns:
+
+### Core Models
+
+```php
+// Located in app/Models/
+Usuario        // User accounts with multi-role support
+Inmueble       // Property listings with media and location
+Contrato       // Rental contracts linking users and properties
+Pago           // Payment records with status tracking
+EstadoCuenta   // Account statement snapshots
+Resena         // Property reviews and ratings
+Favorito       // User's saved properties
+ImagenInmueble // Property image gallery
+```
+
+### Key Controllers
+
+```php
+// Web Controllers (app/Http/Controllers/)
+InmuebleController        // Property CRUD and search
+ArrenditoChatController   // AI chatbot integration
+PerfilController          // User profile management
+SocialAuthController      // OAuth authentication
+
+// API Controllers (app/Http/Controllers/Api/)
+Api\AuthController        // Token-based authentication
+Api\InmuebleController    // RESTful property endpoints
+Api\ContratoController    // Contract and payment management
+Api\PagoController        // Payment processing
+Api\ReporteController     // Business analytics
+```
+
+### Database Structure
+
+The platform uses a relational database with these key tables:
+
+- `usuarios`: User accounts and authentication
+- `roles`: Role definitions (admin, propietario, inquilino)
+- `role_usuario`: Many-to-many role assignments
+- `inmuebles`: Property listings with financial and location data
+- `imagenes_inmuebles`: Property photo galleries
+- `contratos`: Rental agreements
+- `pagos`: Payment records with surcharge tracking
+- `estados_cuenta`: Historical account statements
+- `resenas`: Property reviews and ratings
+- `favoritos`: User's saved properties
+
+### Automated Commands
+
+Scheduled tasks for business logic automation:
+
+```bash
+php artisan app:calcular-recargos              # Apply late fees
+php artisan app:marcar-pagos-vencidos          # Mark overdue payments
+php artisan app:generar-estados-cuenta-mensuales # Generate monthly statements
+```
+
+## API Architecture
+
+ArrendaOco provides both traditional web routes and RESTful API endpoints:
+
+- **Web Routes** (`routes/web.php`): Server-rendered views for public website
+- **API Routes** (`routes/api.php`): JSON API with Sanctum token authentication
+- **Resources**: API responses use Laravel Resources for consistent formatting
+
+<CodeGroup>
+```php routes/api.php
+// Public endpoints
+Route::post('/login', [AuthController::class, 'login']);
+Route::get('/inmuebles/public-list', [InmuebleController::class, 'publicList']);
+
+// Protected endpoints
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('inmuebles', InmuebleController::class);
+    Route::get('/contratos', [ContratoController::class, 'index']);
+    Route::post('/pagos/{pago}/pagar', [PagoController::class, 'pagar']);
+});
+```
+
+```javascript axios example
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: '/api',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Accept': 'application/json'
+  }
+});
+
+// Fetch properties
+const { data } = await api.get('/inmuebles/public-list');
+```
+</CodeGroup>
+
+## Security Features
+
+- **CSRF Protection**: All forms protected with Laravel's CSRF tokens
+- **Password Hashing**: BCrypt encryption for user passwords
+- **SQL Injection Prevention**: Eloquent ORM with parameter binding
+- **XSS Protection**: Blade template escaping
+- **Rate Limiting**: API throttling to prevent abuse
+- **Sanctum Tokens**: Secure API authentication
+- **Middleware Guards**: Role-based route protection
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    Get ArrendaOco running locally in minutes
+  </Card>
+  
+  <Card title="Installation" icon="download" href="/installation">
+    Detailed installation and deployment guide
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api/auth/login">
+    Explore the RESTful API endpoints
+  </Card>
+  
+  <Card title="Configuration" icon="gear" href="/configuration/environment">
+    Configure your deployment
+  </Card>
+</CardGroup>
+
+## Support
+
+For technical assistance or questions:
+
+- **Email**: arrendaoco@gmail.com
+- **Repository**: Check the project README for contribution guidelines
+- **Documentation**: This comprehensive documentation site
+
+<Warning>
+  ArrendaOco is specifically designed for the Ocosingo, Chiapas market. Geographic features like UTS (Universidad Tecnológica de la Selva) references are integral to the ROCO AI assistant.
+</Warning>

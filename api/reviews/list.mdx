@@ -1,0 +1,135 @@
+---
+title: 'List Property Reviews'
+api: 'GET /api/inmuebles/{id}/resenas'
+description: 'Get all reviews for a property with average rating calculation (public endpoint)'
+---
+
+## Authentication
+
+This is a **public endpoint** - no authentication required.
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  Property (inmueble) ID to fetch reviews for
+</ParamField>
+
+## Response
+
+<ResponseField name="resenas" type="array">
+  Paginated array of review objects (15 per page)
+</ResponseField>
+
+<ResponseField name="promedio" type="decimal">
+  Average rating across all reviews for this property (0 if no reviews)
+</ResponseField>
+
+<ResponseField name="total" type="integer">
+  Total number of reviews for this property
+</ResponseField>
+
+### Review Object
+
+<ResponseField name="id" type="integer">
+  Review ID
+</ResponseField>
+
+<ResponseField name="usuario" type="string">
+  Name of the user who wrote the review
+</ResponseField>
+
+<ResponseField name="foto_perfil" type="string | null">
+  Full URL to user's profile photo, or null if not set
+</ResponseField>
+
+<ResponseField name="puntuacion" type="integer">
+  Rating from 1 to 5 stars
+</ResponseField>
+
+<ResponseField name="comentario" type="string">
+  Review comment text (max 1000 characters)
+</ResponseField>
+
+<ResponseField name="fecha" type="string">
+  Human-readable relative time (e.g., "2 days ago")
+</ResponseField>
+
+<ResponseField name="created_at" type="timestamp">
+  Full ISO 8601 timestamp of review creation
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET https://api.arrendaco.com/api/inmuebles/12/resenas \
+  -H "Accept: application/json"
+```
+
+## Example Response
+
+```json
+{
+  "resenas": [
+    {
+      "id": 8,
+      "usuario": "María González",
+      "foto_perfil": "https://api.arrendaco.com/storage/profiles/maria.jpg",
+      "puntuacion": 5,
+      "comentario": "Excelente ubicación y el apartamento está en perfectas condiciones. El propietario fue muy atento durante toda la renta.",
+      "fecha": "3 días atrás",
+      "created_at": "2026-03-01T10:30:00.000000Z"
+    },
+    {
+      "id": 6,
+      "usuario": "Carlos Ramírez",
+      "foto_perfil": null,
+      "puntuacion": 4,
+      "comentario": "Muy buen lugar, solo le falta un poco de mantenimiento en las instalaciones.",
+      "fecha": "1 semana atrás",
+      "created_at": "2026-02-25T15:20:00.000000Z"
+    }
+  ],
+  "promedio": 4.5,
+  "total": 2
+}
+```
+
+## Pagination
+
+Reviews are paginated with 15 items per page. The response includes Laravel pagination metadata:
+
+```json
+{
+  "resenas": [...],
+  "promedio": 4.5,
+  "total": 2,
+  "current_page": 1,
+  "last_page": 1,
+  "per_page": 15,
+  "from": 1,
+  "to": 2
+}
+```
+
+Use the `?page=2` query parameter to access additional pages.
+
+## Sorting
+
+Reviews are returned in **descending order by creation date** (newest first).
+
+## Rating System
+
+- **Scale:** 1-5 stars (integer values only)
+- **Average Calculation:** Simple arithmetic mean of all review ratings
+- **No Reviews:** Returns 0 as the average if no reviews exist
+
+## Use Cases
+
+- Display property reviews on public listing pages
+- Show average rating on property cards
+- Allow potential tenants to see past tenant experiences
+- Build trust through transparent review system
+
+## Implementation Reference
+
+See `app/Http/Controllers/Api/ResenaController.php:34`

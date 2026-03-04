@@ -1,0 +1,517 @@
+---
+title: Database Configuration
+description: Configure MySQL, PostgreSQL, or SQLite for ArrendaOco property management system
+---
+
+## Overview
+
+ArrendaOco supports multiple database systems through Laravel's database abstraction layer. The default configuration uses SQLite for quick setup, but MySQL is recommended for production.
+
+## Supported Databases
+
+- **MySQL** (8.x recommended) - Production recommended
+- **MariaDB** (10.x)
+- **PostgreSQL** (13+)
+- **SQLite** (Development/Testing)
+- **SQL Server** (Enterprise)
+
+## Database Configuration
+
+All database settings are configured in `.env` and read by `config/database.php`.
+
+### MySQL Configuration (Recommended)
+
+ArrendaOco is designed for MySQL with full UTF-8 support for property descriptions in multiple languages.
+
+#### Step 1: Create Database
+
+```sql
+CREATE DATABASE bd_arrendaoco 
+  CHARACTER SET utf8mb4 
+  COLLATE utf8mb4_unicode_ci;
+```
+
+<Info>
+  The database name `bd_arrendaoco` is used in the project's setup documentation. You can use any name, but update your `.env` accordingly.
+</Info>
+
+#### Step 2: Configure Environment
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=bd_arrendaoco
+DB_USERNAME=root
+DB_PASSWORD=
+DB_CHARSET=utf8mb4
+DB_COLLATION=utf8mb4_unicode_ci
+```
+
+**Configuration location:** `config/database.php:46-64`
+
+#### MySQL Connection Options
+
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `DB_HOST` | Database server address | `127.0.0.1` |
+| `DB_PORT` | MySQL port | `3306` |
+| `DB_DATABASE` | Database name | `laravel` |
+| `DB_USERNAME` | Database user | `root` |
+| `DB_PASSWORD` | User password | (empty) |
+| `DB_SOCKET` | Unix socket (alternative to host/port) | - |
+| `DB_CHARSET` | Character set | `utf8mb4` |
+| `DB_COLLATION` | Collation | `utf8mb4_unicode_ci` |
+
+#### SSL/TLS Connection (Production)
+
+For secure remote database connections:
+
+```env
+MYSQL_ATTR_SSL_CA=/path/to/ca-cert.pem
+```
+
+<Warning>
+  Always use SSL/TLS when connecting to remote database servers, especially in production environments.
+</Warning>
+
+### PostgreSQL Configuration
+
+```env
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=bd_arrendaoco
+DB_USERNAME=postgres
+DB_PASSWORD=
+DB_CHARSET=utf8
+DB_SSLMODE=prefer
+```
+
+**Configuration location:** `config/database.php:86-99`
+
+SSL modes: `disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`
+
+### SQLite Configuration (Development)
+
+Perfect for quick development setup and testing.
+
+```env
+DB_CONNECTION=sqlite
+DB_DATABASE=/absolute/path/to/database.sqlite
+```
+
+**Default location:** `database/database.sqlite`
+
+**Configuration location:** `config/database.php:34-44`
+
+Create the database file:
+
+```bash
+touch database/database.sqlite
+php artisan migrate --seed
+```
+
+<Info>
+  SQLite is the default connection in `config/database.php:19`. It's great for development but not recommended for production due to concurrency limitations.
+</Info>
+
+### MariaDB Configuration
+
+```env
+DB_CONNECTION=mariadb
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=bd_arrendaoco
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+**Configuration location:** `config/database.php:66-84`
+
+MariaDB uses the same configuration as MySQL.
+
+## Migration Management
+
+### Running Migrations
+
+Migrations create all required database tables for ArrendaOco.
+
+```bash
+# Run all pending migrations
+php artisan migrate
+
+# Run migrations with seeders (recommended for first setup)
+php artisan migrate --seed
+
+# Force migrations in production (use with caution)
+php artisan migrate --force
+```
+
+### Migration Status
+
+Check which migrations have been run:
+
+```bash
+php artisan migrate:status
+```
+
+### Rolling Back Migrations
+
+```bash
+# Rollback last batch
+php artisan migrate:rollback
+
+# Rollback all migrations
+php artisan migrate:reset
+
+# Rollback and re-run all migrations
+php artisan migrate:refresh
+
+# Rollback, re-run, and seed
+php artisan migrate:refresh --seed
+```
+
+<Warning>
+  **Production Warning:** Never run `migrate:refresh` or `migrate:reset` in production. These commands drop all tables and delete all data.
+</Warning>
+
+### Fresh Database
+
+```bash
+# Drop all tables and re-run migrations
+php artisan migrate:fresh
+
+# Drop all tables, migrate, and seed
+php artisan migrate:fresh --seed
+```
+
+## Database Seeding
+
+ArrendaOco includes seeders to populate the database with initial data.
+
+```bash
+# Run all seeders
+php artisan db:seed
+
+# Run specific seeder
+php artisan db:seed --class=UsuarioSeeder
+```
+
+The seeders create:
+- Sample users (tenants, landlords, admins)
+- Sample properties (inmuebles)
+- Property categories and types
+- Initial application settings
+
+**Seeder location:** `database/seeders/`
+
+## Database Tables
+
+ArrendaOco creates these main tables:
+
+| Table | Description |
+|-------|-------------|
+| `usuarios` | User accounts (tenants, landlords, admins) |
+| `inmuebles` | Property listings |
+| `inmueble_fotos` | Property photos |
+| `reservas` | Property reservations |
+| `resenas` | Property reviews |
+| `mensajes` | Messages between users |
+| `eventos` | Calendar events |
+| `migrations` | Migration tracking |
+| `password_reset_tokens` | Password reset tokens |
+| `sessions` | User sessions |
+| `cache` | Application cache |
+| `jobs` | Queued jobs |
+| `job_batches` | Batch job tracking |
+| `failed_jobs` | Failed queue jobs |
+
+**Migrations table configuration:** `config/database.php:129-132`
+
+## Database Optimization
+
+### Indexing
+
+ArrendaOco migrations include indexes on frequently queried columns:
+- User emails
+- Property titles and locations
+- Reservation dates
+- Foreign key relationships
+
+### Query Optimization
+
+```bash
+# Enable query logging in development
+DB::enableQueryLog();
+
+# View executed queries
+dd(DB::getQueryLog());
+```
+
+Add this to `config/database.php` MySQL connection for slow query logging:
+
+```php
+'options' => [
+    PDO::ATTR_EMULATE_PREPARES => true,
+],
+```
+
+### Connection Pooling
+
+For high-traffic production environments, consider using a connection pooler like:
+- **ProxySQL** (MySQL/MariaDB)
+- **PgBouncer** (PostgreSQL)
+
+## Redis Integration
+
+ArrendaOco supports Redis for caching and queues.
+
+**Configuration location:** `config/database.php:145-181`
+
+```env
+REDIS_CLIENT=phpredis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_CACHE_DB=1
+```
+
+### Redis Configuration Options
+
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `REDIS_CLIENT` | Redis client library | `phpredis` |
+| `REDIS_HOST` | Redis server address | `127.0.0.1` |
+| `REDIS_PORT` | Redis port | `6379` |
+| `REDIS_DB` | Database number for default connection | `0` |
+| `REDIS_CACHE_DB` | Database number for cache | `1` |
+| `REDIS_PASSWORD` | Redis authentication password | `null` |
+| `REDIS_PREFIX` | Key prefix | `arrendaoco-database-` |
+
+Install Redis PHP extension:
+
+```bash
+# Ubuntu/Debian
+sudo apt install php-redis
+
+# macOS (via Homebrew)
+brew install php-redis
+```
+
+## Backup Strategies
+
+### MySQL Backup
+
+```bash
+# Full database backup
+mysqldump -u root -p bd_arrendaoco > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Backup with compression
+mysqldump -u root -p bd_arrendaoco | gzip > backup_$(date +%Y%m%d_%H%M%S).sql.gz
+
+# Backup specific tables
+mysqldump -u root -p bd_arrendaoco usuarios inmuebles > users_properties.sql
+```
+
+### PostgreSQL Backup
+
+```bash
+# Full database backup
+pg_dump -U postgres bd_arrendaoco > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Backup with compression
+pg_dump -U postgres bd_arrendaoco | gzip > backup_$(date +%Y%m%d_%H%M%S).sql.gz
+```
+
+### Restore Database
+
+```bash
+# MySQL restore
+mysql -u root -p bd_arrendaoco < backup.sql
+
+# PostgreSQL restore
+psql -U postgres bd_arrendaoco < backup.sql
+```
+
+<Warning>
+  Always test your backups by restoring them to a test environment. A backup is only good if it can be restored.
+</Warning>
+
+### Automated Backups
+
+Set up a cron job for daily backups:
+
+```bash
+# Add to crontab (crontab -e)
+0 2 * * * /usr/bin/mysqldump -u root -p"password" bd_arrendaoco | gzip > /backups/db_$(date +\%Y\%m\%d).sql.gz
+```
+
+## Performance Tuning
+
+### MySQL Configuration
+
+Edit `/etc/mysql/my.cnf` or MySQL settings:
+
+```ini
+[mysqld]
+innodb_buffer_pool_size = 1G
+innodb_log_file_size = 256M
+max_connections = 200
+query_cache_size = 64M
+tmp_table_size = 64M
+max_heap_table_size = 64M
+```
+
+### Laravel Query Optimization
+
+1. **Use eager loading** to prevent N+1 queries:
+   ```php
+   $inmuebles = Inmueble::with('fotos', 'usuario')->get();
+   ```
+
+2. **Select only needed columns:**
+   ```php
+   $users = Usuario::select('id', 'nombre', 'email')->get();
+   ```
+
+3. **Use chunking for large datasets:**
+   ```php
+   Inmueble::chunk(100, function ($inmuebles) {
+       // Process 100 records at a time
+   });
+   ```
+
+## Connection Testing
+
+### Test Database Connection
+
+Create a test script or run in tinker:
+
+```bash
+php artisan tinker
+```
+
+```php
+DB::connection()->getPdo();
+echo "Connected to: " . DB::connection()->getDatabaseName();
+```
+
+### Test File
+
+The project includes `test_db.php` for testing database connectivity.
+
+## Troubleshooting
+
+### "Access denied for user"
+
+```bash
+# Verify MySQL credentials
+mysql -u root -p
+
+# Grant permissions
+GRANT ALL PRIVILEGES ON bd_arrendaoco.* TO 'root'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+### "SQLSTATE[HY000] [2002] Connection refused"
+
+1. Check MySQL is running:
+   ```bash
+   sudo systemctl status mysql
+   # or
+   sudo service mysql status
+   ```
+
+2. Verify host and port in `.env`
+
+3. Check firewall rules
+
+### "Base table or view not found"
+
+```bash
+# Run migrations
+php artisan migrate
+```
+
+### "Syntax error or access violation: 1071 Specified key was too long"
+
+Add to `app/Providers/AppServiceProvider.php`:
+
+```php
+use Illuminate\Support\Facades\Schema;
+
+public function boot()
+{
+    Schema::defaultStringLength(191);
+}
+```
+
+### Database character encoding issues
+
+Ensure your database, tables, and columns use `utf8mb4`:
+
+```sql
+ALTER DATABASE bd_arrendaoco CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE usuarios CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+## Multiple Database Connections
+
+You can configure multiple database connections in `config/database.php`:
+
+```php
+'connections' => [
+    'mysql' => [...],
+    'mysql_analytics' => [
+        'driver' => 'mysql',
+        'host' => '192.168.1.100',
+        'database' => 'analytics',
+        // ...
+    ],
+],
+```
+
+Use specific connection:
+
+```php
+$users = DB::connection('mysql_analytics')->table('events')->get();
+```
+
+## Database Maintenance
+
+### Optimize Tables
+
+```sql
+OPTIMIZE TABLE usuarios, inmuebles, reservas;
+```
+
+### Analyze Tables
+
+```sql
+ANALYZE TABLE usuarios, inmuebles;
+```
+
+### Check Table Status
+
+```sql
+SHOW TABLE STATUS FROM bd_arrendaoco;
+```
+
+### Monitor Database Size
+
+```sql
+SELECT 
+    table_schema AS 'Database',
+    ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS 'Size (MB)'
+FROM information_schema.tables
+WHERE table_schema = 'bd_arrendaoco'
+GROUP BY table_schema;
+```
+
+## Next Steps
+
+- Configure [Mail Settings](/configuration/mail) for email notifications
+- Set up [Storage Configuration](/configuration/storage) for property images
+- Review [Environment Variables](/configuration/environment) for API keys

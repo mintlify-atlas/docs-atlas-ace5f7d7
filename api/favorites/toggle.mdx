@@ -1,0 +1,214 @@
+---
+title: "Toggle Favorite"
+api: "POST /api/favoritos/{inmueble}/toggle"
+description: "Add or remove a property from the user's favorites"
+---
+
+## Overview
+
+This endpoint toggles the favorite status of a property for the authenticated user. If the property is already in favorites, it will be removed. If it's not in favorites, it will be added.
+
+## Authentication
+
+<Warning>
+  This endpoint requires authentication using Laravel Sanctum.
+  
+  Include the authentication token in the request:
+  ```
+  Authorization: Bearer {token}
+  ```
+</Warning>
+
+## Request
+
+### Path Parameters
+
+<ParamField path="inmueble" type="integer" required>
+  The ID of the property to toggle favorite status
+</ParamField>
+
+### Example Request
+
+```bash cURL
+curl -X POST "https://arrendaoco.com/api/favoritos/42/toggle" \
+  -H "Authorization: Bearer {token}" \
+  -H "Accept: application/json"
+```
+
+```javascript JavaScript
+const propertyId = 42;
+
+const response = await fetch(`https://arrendaoco.com/api/favoritos/${propertyId}/toggle`, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer ' + token,
+    'Accept': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+```dart Flutter/Dart
+final propertyId = 42;
+
+final response = await http.post(
+  Uri.parse('https://arrendaoco.com/api/favoritos/$propertyId/toggle'),
+  headers: {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+  },
+);
+
+final data = jsonDecode(response.body);
+```
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the operation was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message describing the action taken
+  - "Agregado a favoritos" - Property was added to favorites
+  - "Eliminado de favoritos" - Property was removed from favorites
+</ResponseField>
+
+<ResponseField name="is_favorite" type="boolean">
+  The new favorite status of the property
+  - `true` - Property is now in favorites
+  - `false` - Property is no longer in favorites
+</ResponseField>
+
+### Success Response - Added to Favorites (200 OK)
+
+```json
+{
+  "success": true,
+  "message": "Agregado a favoritos",
+  "is_favorite": true
+}
+```
+
+### Success Response - Removed from Favorites (200 OK)
+
+```json
+{
+  "success": false,
+  "message": "Eliminado de favoritos",
+  "is_favorite": false
+}
+```
+
+### Error Response (401 Unauthorized)
+
+```json
+{
+  "message": "Unauthenticated."
+}
+```
+
+### Error Response (404 Not Found)
+
+Returned when the property ID doesn't exist.
+
+```json
+{
+  "message": "No query results for model [App\\Models\\Inmueble]."
+}
+```
+
+## Implementation Details
+
+<Info>
+  **Source Code Reference**
+  
+  - Controller: `app/Http/Controllers/Api/FavoritoController.php:26`
+  - Route: `routes/api.php:54`
+  - Model: `app/Models/Favorito.php`
+  - Migration: `database/migrations/2026_02_04_172236_create_favoritos_table.php`
+</Info>
+
+### Toggle Logic
+
+The endpoint uses the following logic:
+
+1. **Check if favorite exists**: Query the `favoritos` table for a record matching the user and property
+2. **If exists**: Delete the favorite record and return `is_favorite: false`
+3. **If not exists**: Create a new favorite record and return `is_favorite: true`
+
+```php
+$favorito = Favorito::where('usuario_id', $usuario->id)
+                    ->where('inmueble_id', $inmueble->id)
+                    ->first();
+
+if ($favorito) {
+    $favorito->delete();
+    return response()->json([
+        'success' => true,
+        'message' => 'Eliminado de favoritos',
+        'is_favorite' => false
+    ]);
+} else {
+    Favorito::create([
+        'usuario_id' => $usuario->id,
+        'inmueble_id' => $inmueble->id
+    ]);
+    return response()->json([
+        'success' => true,
+        'message' => 'Agregado a favoritos',
+        'is_favorite' => true
+    ]);
+}
+```
+
+### Database Constraints
+
+<Note>
+  **Unique Constraint**: The `favoritos` table has a unique composite index on `(usuario_id, inmueble_id)`, ensuring a user cannot have duplicate favorites for the same property.
+</Note>
+
+### Cascade Deletion
+
+Both foreign keys (`usuario_id` and `inmueble_id`) are configured with `onDelete('cascade')`, meaning:
+- If a user is deleted, all their favorites are automatically removed
+- If a property is deleted, all favorites referencing it are automatically removed
+
+## UI Integration Tips
+
+<Tip>
+  **Heart Icon Toggle**
+  
+  Use the `is_favorite` boolean in the response to update your UI:
+  
+  ```javascript
+  function toggleFavorite(propertyId) {
+    fetch(`/api/favoritos/${propertyId}/toggle`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      // Update heart icon based on data.is_favorite
+      const heartIcon = document.querySelector(`#heart-${propertyId}`);
+      heartIcon.classList.toggle('filled', data.is_favorite);
+      
+      // Show toast notification
+      showToast(data.message);
+    });
+  }
+  ```
+</Tip>
+
+## Related Endpoints
+
+<CardGroup cols={2}>
+  <Card title="List Favorites" icon="list" href="/api/favorites/list">
+    View all favorite properties
+  </Card>
+  
+  <Card title="List Favorites" icon="list" href="/api/favorites/list">
+    View all your favorite properties
+  </Card>
+</CardGroup>

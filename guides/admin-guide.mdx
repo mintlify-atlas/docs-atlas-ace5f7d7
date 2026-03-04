@@ -1,0 +1,1157 @@
+---
+title: Admin Guide
+description: Complete administrator guide for managing ArrendaOco platform operations, users, and content
+---
+
+# Admin Guide
+
+Welcome to the ArrendaOco administrator guide. This comprehensive resource covers all platform management capabilities available to system administrators.
+
+## Admin Access & Permissions
+
+### Becoming an Administrator
+
+Admin access is granted through:
+- Database-level assignment of `es_admin = true` on usuario record
+- Assignment of the "admin" role in the role system
+
+Users with either flag have full administrative capabilities.
+
+### Admin Middleware Protection
+
+All admin routes are protected by the `admin` middleware:
+- Verifies user is authenticated
+- Checks for `es_admin` flag or "admin" role
+- Returns 403 Forbidden if unauthorized
+- Prevents accidental access by regular users
+
+### Admin Capabilities Overview
+
+<CardGroup cols={2}>
+  <Card title="User Management" icon="users">
+    Create, edit, suspend, and delete user accounts with role assignment
+  </Card>
+  
+  <Card title="Property Oversight" icon="building">
+    View, edit, and remove all property listings across the platform
+  </Card>
+  
+  <Card title="Content Moderation" icon="shield">
+    Review and remove inappropriate reviews and listings
+  </Card>
+  
+  <Card title="Reports & Analytics" icon="chart-line">
+    Generate comprehensive reports on users, properties, and platform activity
+  </Card>
+</CardGroup>
+
+## Accessing Admin Dashboard
+
+### Navigation to Admin Area
+
+<Steps>
+  <Step title="Log In as Admin">
+    Authenticate with an administrator account
+  </Step>
+  
+  <Step title="Access Admin Routes">
+    Navigate to `/admin/usuarios` for user management or `/admin/inmuebles/reporte` for reports
+  </Step>
+  
+  <Step title="Verify Access">
+    All admin pages are under the `/admin` prefix with middleware protection
+  </Step>
+</Steps>
+
+### Admin Route Structure
+
+Key administrative routes:
+
+- `/admin/usuarios` - User management dashboard
+- `/admin/usuarios/create` - Create new users
+- `/admin/usuarios/{id}/edit` - Edit user details
+- `/admin/usuarios/reporte` - Generate user reports (PDF)
+- `/admin/inmuebles/reporte` - Generate property reports (PDF)
+- `/admin/resenas` - Review moderation interface
+
+<Note>
+All admin routes require authentication and admin permissions. Attempting to access without proper credentials returns a 403 error.
+</Note>
+
+## User Management
+
+### Viewing All Users
+
+The user management dashboard (`/admin/usuarios`) provides:
+
+- **Complete User List**: All registered usuarios with pagination (10 per page)
+- **User Details**:
+  - Full name
+  - Email address
+  - Assigned roles (inquilino, propietario, admin)
+  - Account status (activo/inactivo)
+  - Registration date
+- **Search Functionality**: Filter users by:
+  - Name (partial match)
+  - Email address (partial match)
+- **Quick Actions**: Edit, view, or delete buttons for each user
+
+### Creating New Users
+
+Manually create user accounts:
+
+<Steps>
+  <Step title="Navigate to User Creation">
+    Go to `/admin/usuarios/create` or click "Create User" button
+  </Step>
+  
+  <Step title="Enter Required Information">
+    Provide:
+    - **Full Name** (nombre): Minimum 3 characters, maximum 255
+    - **Email**: Valid, unique email address
+    - **Password**: Minimum 8 characters
+    - **Password Confirmation**: Must match
+    - **Status**: Select "activo" or "inactivo" (defaults to activo)
+  </Step>
+  
+  <Step title="Submit Form">
+    Click create - password is automatically hashed with BCrypt
+  </Step>
+  
+  <Step title="Assign Roles">
+    After creation, edit user to assign specific roles (inquilino, propietario, admin)
+  </Step>
+</Steps>
+
+#### Validation Rules
+
+- **Name**: Required, 3-255 characters
+- **Email**: Required, valid format, unique in database
+- **Password**: Required, minimum 8 characters, must be confirmed
+- **Status**: Must be "activo" or "inactivo"
+
+<Warning>
+Manually created users receive default tenant role. Remember to assign additional roles (landlord, admin) as needed through the edit interface.
+</Warning>
+
+### Editing User Accounts
+
+Modify existing user information:
+
+<Steps>
+  <Step title="Access User Edit Form">
+    From user list, click edit button or navigate to `/admin/usuarios/{id}/edit`
+  </Step>
+  
+  <Step title="Update User Information">
+    Modify:
+    - Full name
+    - Email address (must remain unique)
+    - Password (optional - leave blank to keep current)
+    - Account status (activo/inactivo)
+  </Step>
+  
+  <Step title="Manage Roles">
+    Assign or remove roles:
+    - Inquilino (Tenant)
+    - Propietario (Landlord)
+    - Admin (Administrator)
+  </Step>
+  
+  <Step title="Save Changes">
+    Submit form - validation ensures data integrity
+  </Step>
+</Steps>
+
+#### Edit Validation
+
+- Name: Minimum 3 characters
+- Email: Must be valid and unique (excluding current user)
+- Password: Optional, but minimum 8 characters if provided
+- Status: Must be "activo" or "inactivo"
+
+<Tip>
+Changing user status to "inactivo" prevents login but preserves all data. This is preferable to deletion for temporary restrictions.
+</Tip>
+
+### Managing User Status
+
+#### Active Users (activo)
+
+- Can log into the platform
+- Access all features based on assigned roles
+- Publish properties if landlord
+- Create contracts and payments
+
+#### Inactive Users (inactivo)
+
+- **Cannot log in** - authentication fails
+- **Cannot perform operations** - all functionality restricted
+- **Data preserved** - properties, contracts, reviews remain
+- **Reversible** - can be reactivated at any time
+
+#### When to Deactivate
+
+<AccordionGroup>
+  <Accordion title="Inappropriate Behavior">
+    Temporarily suspend users who violate community guidelines while investigating
+  </Accordion>
+  
+  <Accordion title="Payment Issues">
+    Restrict access for landlords with unresolved financial disputes
+  </Accordion>
+  
+  <Accordion title="Spam or Fraud">
+    Immediately deactivate accounts suspected of fraudulent activity
+  </Accordion>
+  
+  <Accordion title="User Request">
+    Honor user requests for temporary account suspension
+  </Accordion>
+</AccordionGroup>
+
+### Deleting Users
+
+Permanently remove user accounts:
+
+<Steps>
+  <Step title="Initiate Deletion">
+    Click delete button on user in the admin users list
+  </Step>
+  
+  <Step title="System Verification Checks">
+    Automatic validation prevents deletion if:
+    - User is the currently logged-in admin (cannot self-delete)
+    - User has active contracts as landlord
+    - User has active contracts as tenant
+    - User has published properties
+  </Step>
+  
+  <Step title="Confirm Deletion">
+    If all checks pass, confirm the permanent deletion
+  </Step>
+  
+  <Step title="User Removed">
+    Account and associated authentication data permanently deleted
+  </Step>
+</Steps>
+
+#### Deletion Safety Checks
+
+The system prevents deletion when:
+
+```php
+// Prevents admin self-deletion
+if ($id == auth()->id()) {
+    return error('Cannot delete your own admin account');
+}
+
+// Checks for active contracts
+if ($usuario->contratosComoPropietario()->where('estatus', 'activo')->exists() ||
+    $usuario->contratosComoInquilino()->where('estatus', 'activo')->exists()) {
+    return error('User has active contracts');
+}
+
+// Checks for published properties
+if ($usuario->inmuebles()->exists()) {
+    return error('User has registered properties');
+}
+```
+
+<Warning>
+Deletion is permanent and irreversible. Always use status deactivation (inactivo) for temporary restrictions. Only delete accounts for spam, duplicates, or when explicitly requested after all obligations are cleared.
+</Warning>
+
+### Role Management
+
+Administrators can assign multiple roles to users:
+
+#### Available Roles
+
+- **Inquilino** (Tenant): Default role for all users
+  - Search and view properties
+  - Manage favorites
+  - Create reviews
+  - Access rental contracts as tenant
+
+- **Propietario** (Landlord): Property owners
+  - All tenant capabilities
+  - Publish properties
+  - Manage property listings
+  - Create rental contracts
+  - Track payments
+
+- **Admin** (Administrator): Platform managers
+  - All system access
+  - User management
+  - Content moderation
+  - Report generation
+  - Override permissions
+
+#### Assigning Roles
+
+<Steps>
+  <Step title="Edit User">
+    Access the user edit form
+  </Step>
+  
+  <Step title="Select Roles">
+    Choose from available role checkboxes or dropdown
+  </Step>
+  
+  <Step title="Save Changes">
+    Roles take effect immediately
+  </Step>
+</Steps>
+
+<Note>
+Users can have multiple roles simultaneously. A user can be both a tenant and landlord, allowing them to search for properties while also managing their own listings.
+</Note>
+
+## Property Management
+
+### Viewing All Properties
+
+Administrators have full access to all property listings:
+
+- **Admin Property View** (`/admin/inmuebles` or `/mis-propiedades` when logged in as admin)
+- **Displays**: All properties from all landlords
+- **Search**: Filter by title, address, type, or owner name/email
+- **Pagination**: 10 properties per page
+- **Owner Information**: See which user owns each property
+
+### Editing Any Property
+
+Admins can modify any property regardless of ownership:
+
+<Steps>
+  <Step title="Access Property">
+    Navigate to property edit form (`/inmuebles/{id}/editar`)
+  </Step>
+  
+  <Step title="Verify Admin Override">
+    System checks: `if ($inmueble->propietario_id !== auth()->id() && !auth()->user()->es_admin)`
+    Admins bypass owner check
+  </Step>
+  
+  <Step title="Make Necessary Changes">
+    Update:
+    - Property details
+    - Pricing
+    - Description
+    - Photos
+    - Video
+    - Any field as needed
+  </Step>
+  
+  <Step title="Save Changes">
+    Updates apply immediately
+  </Step>
+</Steps>
+
+### Deleting Properties
+
+Remove inappropriate or policy-violating listings:
+
+<Steps>
+  <Step title="Identify Property to Remove">
+    Locate property in admin property list
+  </Step>
+  
+  <Step title="Initiate Deletion">
+    Click delete button
+  </Step>
+  
+  <Step title="Verification Check">
+    System prevents deletion if active contracts exist
+  </Step>
+  
+  <Step title="Confirm Removal">
+    Property and associated images permanently deleted
+  </Step>
+</Steps>
+
+<Warning>
+Admins should communicate with property owners before deleting their listings unless immediate removal is necessary for policy violations.
+</Warning>
+
+### Common Property Management Tasks
+
+<AccordionGroup>
+  <Accordion title="Correcting Inaccurate Listings">
+    Edit properties with misleading descriptions, incorrect pricing, or wrong location data
+  </Accordion>
+  
+  <Accordion title="Removing Duplicate Listings">
+    Delete duplicate properties created by the same landlord
+  </Accordion>
+  
+  <Accordion title="Updating Abandoned Properties">
+    Modify or remove listings from inactive users
+  </Accordion>
+  
+  <Accordion title="Quality Control">
+    Ensure all listings meet platform standards for photos, descriptions, and information completeness
+  </Accordion>
+  
+  <Accordion title="Resolving Disputes">
+    Mediate conflicts between tenants and landlords by reviewing property details
+  </Accordion>
+</AccordionGroup>
+
+## Content Moderation
+
+### Review Management
+
+Access the review moderation interface:
+
+<Steps>
+  <Step title="Navigate to Reviews">
+    Go to `/admin/resenas` to see all platform reviews
+  </Step>
+  
+  <Step title="Review Content">
+    See:
+    - Review author
+    - Property being reviewed
+    - Star rating
+    - Written comment
+    - Submission date
+  </Step>
+  
+  <Step title="Identify Violations">
+    Look for:
+    - Offensive language
+    - Spam or fake reviews
+    - Personal attacks
+    - Discriminatory content
+    - Reviews unrelated to actual rental experience
+  </Step>
+</Steps>
+
+### Deleting Inappropriate Reviews
+
+Administrators can remove any review:
+
+<Steps>
+  <Step title="Locate Problem Review">
+    Find the review violating community guidelines
+  </Step>
+  
+  <Step title="Delete Review">
+    Click delete button - admin permission bypasses ownership check
+  </Step>
+  
+  <Step title="Rating Recalculation">
+    Property average rating updates automatically
+  </Step>
+  
+  <Step title="Optional: Notify User">
+    Consider informing the review author why content was removed
+  </Step>
+</Steps>
+
+### Content Moderation Guidelines
+
+<AccordionGroup>
+  <Accordion title="Remove: Offensive Language">
+    Delete reviews containing profanity, hate speech, or personal insults
+  </Accordion>
+  
+  <Accordion title="Remove: Spam">
+    Delete promotional content, repeated reviews, or irrelevant comments
+  </Accordion>
+  
+  <Accordion title="Remove: False Information">
+    Remove reviews proven to contain deliberate misinformation with landlord evidence
+  </Accordion>
+  
+  <Accordion title="Keep: Negative but Honest">
+    Preserve critical reviews that reflect genuine tenant experiences, even if unflattering
+  </Accordion>
+  
+  <Accordion title="Keep: Detailed Feedback">
+    Maintain reviews providing specific, constructive feedback
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+Only remove reviews that clearly violate guidelines. Don't delete negative reviews simply because landlords complain. Honest feedback is valuable for platform integrity.
+</Warning>
+
+## Reports & Analytics
+
+### User Reports
+
+Generate comprehensive user statistics:
+
+<Steps>
+  <Step title="Access User Report">
+    Navigate to `/admin/usuarios/reporte`
+  </Step>
+  
+  <Step title="Automatic Generation">
+    System fetches all users with role information
+  </Step>
+  
+  <Step title="PDF Creation">
+    Report generated using DomPDF library with formatted layout
+  </Step>
+  
+  <Step title="Download">
+    File downloads as `reporte_usuarios.pdf`
+  </Step>
+</Steps>
+
+#### User Report Contents
+
+- Complete user list
+- User names and email addresses
+- Assigned roles for each user
+- Account status (active/inactive)
+- User classification by role:
+  - Total tenants (Inquilinos)
+  - Total landlords (Propietarios)
+  - Total administrators
+- Growth metrics (if implemented):
+  - New users per month
+  - Registration trends
+
+### Property Reports
+
+Generate property inventory statistics:
+
+<Steps>
+  <Step title="Access Property Report">
+    Navigate to `/admin/inmuebles/reporte`
+  </Step>
+  
+  <Step title="Data Collection">
+    System gathers all properties with owner information
+  </Step>
+  
+  <Step title="PDF Generation">
+    Formatted report created with property details
+  </Step>
+  
+  <Step title="Download">
+    File downloads as `reporte_inmuebles.pdf`
+  </Step>
+</Steps>
+
+#### Property Report Contents
+
+- Complete property inventory
+- Property titles and addresses
+- Property types (casa, departamento, cuarto)
+- Rental prices
+- Property status (disponible/rentado)
+- Owner information for each property
+- Property statistics:
+  - Total listings
+  - Available vs. rented breakdown
+  - Properties by type
+  - Average rental prices
+
+### Report Usage Scenarios
+
+<CardGroup cols={2}>
+  <Card title="Platform Growth" icon="chart-line">
+    Track user registration trends and property listing growth over time
+  </Card>
+  
+  <Card title="Market Analysis" icon="magnifying-glass-chart">
+    Analyze rental prices, popular property types, and market demand in Ocosingo
+  </Card>
+  
+  <Card title="Compliance Documentation" icon="file-shield">
+    Maintain records for regulatory compliance and business reporting
+  </Card>
+  
+  <Card title="Performance Metrics" icon="gauge-high">
+    Evaluate platform performance, occupancy rates, and user engagement
+  </Card>
+</CardGroup>
+
+<Tip>
+Generate reports monthly to track platform trends and identify areas for improvement or marketing opportunities.
+</Tip>
+
+## System Monitoring
+
+### Platform Health Indicators
+
+Monitor these key metrics:
+
+#### User Activity
+- **New Registrations**: Track daily/weekly/monthly signups
+- **Active Users**: Monitor login frequency
+- **Role Distribution**: Balance of tenants vs. landlords
+- **Inactive Accounts**: Identify dormant users
+
+#### Property Metrics
+- **New Listings**: Properties published per period
+- **Occupancy Rate**: Percentage of properties rented vs. available
+- **Average Time to Rent**: Days from listing to contract
+- **Listing Quality**: Properties with complete information and media
+
+#### Contract & Financial
+- **Active Contracts**: Current rental agreements
+- **Payment Status**: On-time vs. late payment rates
+- **Revenue Tracking**: Total rent processed through platform
+- **Dispute Frequency**: Number of issues requiring admin intervention
+
+#### Content Quality
+- **Review Volume**: Number of reviews submitted
+- **Average Ratings**: Overall platform satisfaction
+- **Moderation Actions**: Reviews removed, users suspended
+- **Report Response Time**: Speed of admin action on issues
+
+### Identifying Issues
+
+<AccordionGroup>
+  <Accordion title="Declining Registrations">
+    If new user signups decrease, investigate:
+    - Marketing effectiveness
+    - Competitor platforms
+    - Technical issues preventing registration
+    - User experience problems
+  </Accordion>
+  
+  <Accordion title="Low Occupancy Rates">
+    If many properties remain available:
+    - Review pricing competitiveness
+    - Assess listing quality
+    - Check search functionality
+    - Consider market saturation
+  </Accordion>
+  
+  <Accordion title="Payment Problems">
+    If late payments increase:
+    - Verify payment tracking works correctly
+    - Review tenant screening processes
+    - Check economic conditions in Ocosingo
+  </Accordion>
+  
+  <Accordion title="High Moderation Volume">
+    If many reviews require removal:
+    - Review community guidelines clarity
+    - Consider user education
+    - Identify problematic users
+    - Assess if guidelines need updating
+  </Accordion>
+</AccordionGroup>
+
+## Platform Settings
+
+### Configurable Parameters
+
+While direct settings UI may not be implemented, admins can coordinate with developers to configure:
+
+- **Late Fee Amount**: Penalty for overdue rent payments
+- **Supported Property Types**: Casa, departamento, cuarto categories
+- **Photo Limits**: Maximum images per property (currently 10)
+- **File Size Limits**: Maximum upload sizes (currently 10MB for properties, 2MB for profiles)
+- **Pagination**: Items per page (currently 10-15 depending on view)
+- **Search Filters**: Available price ranges and filter options
+
+<Note>
+Most platform settings are configured in code rather than through an admin UI. Coordinate with technical team for configuration changes.
+</Note>
+
+## Dispute Resolution
+
+### Handling User Conflicts
+
+When disputes arise between users:
+
+<Steps>
+  <Step title="Gather Information">
+    - Review user accounts of both parties
+    - Examine property listing details
+    - Check contract terms if applicable
+    - Review payment history
+    - Read any relevant reviews or communications
+  </Step>
+  
+  <Step title="Assess the Situation">
+    Determine:
+    - Nature of the dispute (financial, property condition, behavior)
+    - Evidence provided by each party
+    - Platform policy violations
+    - Legal or contractual obligations
+  </Step>
+  
+  <Step title="Take Appropriate Action">
+    Options include:
+    - Mediate communication between parties
+    - Modify or correct property information
+    - Adjust user status if policy violations found
+    - Remove inappropriate content
+    - Recommend legal resources for matters outside platform scope
+  </Step>
+  
+  <Step title="Document Resolution">
+    - Keep records of dispute details
+    - Note actions taken
+    - Track outcomes
+    - Identify patterns for policy improvement
+  </Step>
+</Steps>
+
+### Common Dispute Types
+
+<AccordionGroup>
+  <Accordion title="Property Misrepresentation">
+    **Issue**: Tenant claims property doesn't match listing
+    
+    **Admin Actions**:
+    - Compare property photos with tenant evidence
+    - Review description accuracy
+    - Correct misleading information
+    - Warn or suspend landlord for repeated violations
+    - Consider removing listing if fraudulent
+  </Accordion>
+  
+  <Accordion title="Payment Disagreements">
+    **Issue**: Dispute over payment amounts or due dates
+    
+    **Admin Actions**:
+    - Verify contract terms in system
+    - Check payment records
+    - Review late fee calculations
+    - Clarify platform payment tracking
+    - Remind parties of their contractual obligations
+  </Accordion>
+  
+  <Accordion title="Review Conflicts">
+    **Issue**: Landlord claims review is false or defamatory
+    
+    **Admin Actions**:
+    - Verify reviewer had actual rental contract
+    - Assess if review violates content guidelines
+    - Check for factual accuracy with evidence
+    - Remove only if clearly policy-violating
+    - Preserve honest negative feedback
+  </Accordion>
+  
+  <Accordion title="Contract Termination">
+    **Issue**: Early lease termination or eviction disputes
+    
+    **Admin Actions**:
+    - Review contract dates and terms
+    - Verify payment status
+    - Note platform facilitates but doesn't enforce contracts
+    - Recommend legal counsel for complex issues
+    - Only intervene for platform functionality problems
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+ArrendaOco facilitates property listings and connections but is not a party to rental contracts. Limit admin intervention to platform-related issues and direct legal matters to appropriate authorities.
+</Warning>
+
+## Security & Access Control
+
+### Admin Account Security
+
+<Steps>
+  <Step title="Use Strong Passwords">
+    Require minimum 12 characters with complexity for admin accounts
+  </Step>
+  
+  <Step title="Limit Admin Accounts">
+    Only grant admin access to essential personnel
+  </Step>
+  
+  <Step title="Regular Access Review">
+    Periodically audit who has admin privileges and remove unnecessary access
+  </Step>
+  
+  <Step title="Monitor Admin Actions">
+    Track administrative activities for security and accountability
+  </Step>
+</Steps>
+
+### Preventing Unauthorized Access
+
+Security measures in place:
+
+- **Middleware Protection**: Admin routes check credentials on every request
+- **HTTPS Encryption**: Secure data transmission
+- **Password Hashing**: BCrypt encryption for all passwords
+- **CSRF Protection**: Laravel's built-in CSRF token validation
+- **SQL Injection Prevention**: Eloquent ORM parameterized queries
+
+### Data Privacy Compliance
+
+<AccordionGroup>
+  <Accordion title="User Data Protection">
+    - Access user information only for legitimate administrative purposes
+    - Don't share personal data with unauthorized parties
+    - Maintain confidentiality of email addresses and contact information
+  </Accordion>
+  
+  <Accordion title="Financial Privacy">
+    - Payment records are confidential between landlord and tenant
+    - View financial data only for dispute resolution
+    - Don't disclose payment history to third parties
+  </Accordion>
+  
+  <Accordion title="Deletion Requests">
+    - Honor user requests for data deletion when no active obligations exist
+    - Verify contracts are closed before deleting accounts
+    - Maintain minimal necessary records for legal compliance
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices for Administrators
+
+### User Management
+
+<AccordionGroup>
+  <Accordion title="Prefer Deactivation Over Deletion">
+    Use status changes to "inactivo" for temporary restrictions. Delete only when absolutely necessary.
+  </Accordion>
+  
+  <Accordion title="Communicate Changes">
+    Notify users when modifying their accounts, especially status changes or deletions.
+  </Accordion>
+  
+  <Accordion title="Document Actions">
+    Keep notes on why users were suspended or deleted for future reference and pattern identification.
+  </Accordion>
+  
+  <Accordion title="Fair Treatment">
+    Apply policies consistently across all users regardless of role or tenure.
+  </Accordion>
+</AccordionGroup>
+
+### Content Moderation
+
+<AccordionGroup>
+  <Accordion title="Transparent Guidelines">
+    Ensure community standards are clearly communicated to all users.
+  </Accordion>
+  
+  <Accordion title="Consistent Enforcement">
+    Apply content policies uniformly without favoritism.
+  </Accordion>
+  
+  <Accordion title="Preserve Honest Feedback">
+    Don't remove negative reviews just because landlords complain. Only delete policy violations.
+  </Accordion>
+  
+  <Accordion title="Quick Response">
+    Address reported content violations promptly to maintain platform quality.
+  </Accordion>
+</AccordionGroup>
+
+### Platform Maintenance
+
+<Steps>
+  <Step title="Regular Monitoring">
+    Check platform health metrics daily or weekly depending on activity volume
+  </Step>
+  
+  <Step title="Generate Reports">
+    Create monthly reports to track trends and identify issues early
+  </Step>
+  
+  <Step title="User Communication">
+    Maintain open channels for user feedback and support requests
+  </Step>
+  
+  <Step title="Quality Assurance">
+    Periodically review random listings and reviews for quality standards
+  </Step>
+  
+  <Step title="Policy Updates">
+    Revise guidelines based on real-world issues and user behavior patterns
+  </Step>
+</Steps>
+
+## Troubleshooting Admin Issues
+
+### Can't Access Admin Routes
+
+**Problem**: 403 Forbidden error on admin pages
+
+**Solutions**:
+- Verify your account has `es_admin = true` in database
+- Check if you have the "admin" role assigned
+- Ensure you're logged in with admin account
+- Clear cache and retry
+- Contact technical team if issue persists
+
+### Can't Delete User
+
+**Problem**: Deletion fails with error message
+
+**Solutions**:
+- Check error message for specific reason
+- Verify user has no active contracts
+- Ensure user has no published properties
+- Confirm you're not trying to delete yourself
+- Have landlord transfer properties first if needed
+
+### Report Generation Fails
+
+**Problem**: PDF reports don't download
+
+**Solutions**:
+- Check server PDF generation library (DomPDF) is installed
+- Verify sufficient server memory for report generation
+- Test with smaller data sets
+- Check error logs for specific failure reason
+- Contact technical team for server configuration
+
+### Property Edit Doesn't Save
+
+**Problem**: Changes to properties don't persist
+
+**Solutions**:
+- Verify validation passes (check error messages)
+- Ensure file uploads don't exceed size limits
+- Check for conflicts with active contracts
+- Verify database connection
+- Review error logs for specific issues
+
+## Platform Policies & Guidelines
+
+### Content Standards
+
+Enforce these platform standards:
+
+#### Property Listings
+- **Accurate Information**: Descriptions must match actual property
+- **Real Photos**: Images must show the actual property being listed
+- **Complete Details**: All required fields should be filled
+- **Appropriate Pricing**: Prices should reflect market rates
+- **Location Accuracy**: Coordinates and addresses must be correct
+
+#### User Reviews
+- **Authentic Experience**: Reviews from actual rental contracts only
+- **Respectful Language**: No profanity or personal attacks
+- **Relevant Content**: Reviews about rental experience, not unrelated topics
+- **Honest Feedback**: Both positive and negative reviews allowed
+- **No Spam**: Prohibit promotional or repeated content
+
+### User Conduct
+
+Expected behavior for all users:
+
+- **Respectful Communication**: Professional interactions between landlords and tenants
+- **Truthfulness**: Accurate information in listings, profiles, and communications
+- **Privacy Respect**: Don't share others' personal information
+- **Legal Compliance**: Follow local Ocosingo and Mexican rental laws
+- **Platform Use**: Use ArrendaOco for legitimate rental purposes only
+
+### Violation Consequences
+
+<Steps>
+  <Step title="First Offense">
+    - Warning communication
+    - Content removal if applicable
+    - User education on guidelines
+  </Step>
+  
+  <Step title="Repeated Violations">
+    - Account suspension (inactivo status)
+    - Temporary restriction from posting
+    - Review of all user content
+  </Step>
+  
+  <Step title="Serious or Continued Violations">
+    - Permanent account deletion
+    - IP blocking if necessary
+    - Legal action for fraud or illegal activity
+  </Step>
+</Steps>
+
+## Emergency Procedures
+
+### Critical Issues Requiring Immediate Action
+
+<AccordionGroup>
+  <Accordion title="Fraudulent Listings">
+    **Indicators**: Fake properties, scam listings, identity theft
+    
+    **Actions**:
+    - Immediately deactivate property listing
+    - Suspend user account (set to inactivo)
+    - Contact affected users
+    - Document evidence
+    - Report to authorities if criminal activity suspected
+  </Accordion>
+  
+  <Accordion title="Harassment or Threats">
+    **Indicators**: Threatening messages, stalking behavior, dangerous situations
+    
+    **Actions**:
+    - Suspend offending user immediately
+    - Document all evidence
+    - Contact affected parties
+    - Recommend contacting local authorities
+    - Preserve communication records for legal purposes
+  </Accordion>
+  
+  <Accordion title="Data Breach">
+    **Indicators**: Unauthorized access, leaked user information, security compromise
+    
+    **Actions**:
+    - Alert technical team immediately
+    - Change all admin passwords
+    - Identify scope of breach
+    - Notify affected users
+    - Coordinate with security team on remediation
+  </Accordion>
+  
+  <Accordion title="System Outage">
+    **Indicators**: Platform unavailable, critical functionality broken
+    
+    **Actions**:
+    - Contact technical team
+    - Post status updates if communication available
+    - Document when outage began
+    - Track user impact
+    - Follow up with post-mortem analysis
+  </Accordion>
+</AccordionGroup>
+
+## Integration with Platform Features
+
+### AI Assistant (Arrendito)
+
+As admin, understand how Arrendito works:
+
+- **Technology**: Google Gemini 2.0 Flash API
+- **Access**: Available to all users including non-authenticated visitors
+- **Capabilities**: 
+  - Property recommendations
+  - Platform assistance
+  - General rental information
+- **Limitations**: AI responses based on database context
+- **Customization**: Users can personalize assistant name
+
+<Note>
+Monitor Arrendito usage for inappropriate responses or technical issues. Coordinate with technical team if AI provides incorrect information.
+</Note>
+
+### Payment System
+
+Understand the payment tracking workflow:
+
+1. **Contract Creation**: Generates monthly payment schedule
+2. **Payment Records**: Each month has pending payment entry
+3. **Payment Processing**: Landlord marks as paid with reference
+4. **Late Fees**: Automatic calculation for overdue payments
+5. **Statements**: PDF generation for payment history
+
+Admins may need to:
+- Verify payment status in disputes
+- Correct erroneous payment records
+- Review late fee calculations
+- Access financial statements for conflict resolution
+
+### Social Authentication
+
+Platform supports:
+- **Google OAuth**: Users can register/login with Google accounts
+- **Facebook** (may be disabled): Alternative social login
+
+Admin considerations:
+- Social login users may not have traditional passwords
+- Google ID and Facebook ID stored separately from email/password
+- Social users still subject to same policies and management
+
+## Continuous Improvement
+
+### Gathering Feedback
+
+<Steps>
+  <Step title="Monitor User Behavior">
+    Track which features are most used and which are ignored
+  </Step>
+  
+  <Step title="Review Support Requests">
+    Identify common user questions and pain points
+  </Step>
+  
+  <Step title="Analyze Reports">
+    Use generated reports to identify trends and opportunities
+  </Step>
+  
+  <Step title="Solicit Direct Feedback">
+    Occasionally survey users about platform experience
+  </Step>
+</Steps>
+
+### Suggesting Platform Improvements
+
+As you manage the platform, you may identify needs for:
+
+- **New Features**: Additional search filters, communication tools, etc.
+- **UI Enhancements**: Improved admin dashboard, better navigation
+- **Policy Updates**: Refined guidelines based on real-world issues
+- **Process Automation**: Reducing manual admin tasks
+- **Reporting Enhancements**: More detailed analytics and insights
+
+Document these observations and coordinate with the technical team for implementation.
+
+## Resources & Support
+
+### Technical Support
+
+For platform technical issues:
+- Contact development team
+- Provide detailed error descriptions
+- Include screenshots if applicable
+- Note when issue first occurred
+- Describe steps to reproduce
+
+### Legal & Compliance
+
+For legal questions:
+- Consult with legal counsel for rental law questions
+- Review Mexican tenant/landlord regulations
+- Stay updated on Ocosingo local ordinances
+- Understand data privacy requirements
+
+### Admin Community
+
+If multiple administrators:
+- Maintain communication about policy decisions
+- Share insights about user behavior patterns
+- Coordinate on major administrative actions
+- Document procedures for consistency
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication System" icon="user-shield" href="/features/authentication">
+    Understand user roles and permissions
+  </Card>
+  
+  <Card title="Property Management" icon="building" href="/features/properties">
+    Learn about property oversight features
+  </Card>
+  
+  <Card title="Review System" icon="star" href="/features/reviews">
+    Review moderation and management
+  </Card>
+  
+  <Card title="Payment Tracking" icon="credit-card" href="/features/payments">
+    Monitor platform transactions
+  </Card>
+</CardGroup>
+
+---
+
+<Warning>
+With great power comes great responsibility. Admin access provides complete control over the platform and user data. Use these capabilities ethically, professionally, and in accordance with platform policies and legal requirements.
+</Warning>
+
+<Note>
+This guide reflects current ArrendaOco administrative features. Platform capabilities may be updated over time. Check documentation regularly and coordinate with the technical team for the latest information.
+</Note>

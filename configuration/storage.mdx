@@ -1,0 +1,705 @@
+---
+title: Storage Configuration
+description: Configure file uploads, image storage, and disk management for ArrendaOco property photos and user profiles
+---
+
+## Overview
+
+ArrendaOco manages file uploads for:
+- Property photos (multiple images per property)
+- User profile pictures
+- Property documents
+- Exported reports (PDF)
+
+All storage configuration is managed in `config/filesystems.php`.
+
+## Storage Drivers
+
+ArrendaOco supports multiple storage drivers:
+
+| Driver | Use Case | Cost |
+|--------|----------|------|
+| `local` | Private files (default) | Free |
+| `public` | Public files (images) | Free |
+| `s3` | Production, scalable storage | Paid |
+| `ftp` | Legacy servers | Free |
+| `sftp` | Secure file transfer | Free |
+
+**Default filesystem:** `local`  
+**Configuration location:** `config/filesystems.php:16`
+
+## Local Storage (Development)
+
+Default configuration for development.
+
+```env
+FILESYSTEM_DISK=local
+```
+
+### Storage Disks
+
+#### Private Storage (local)
+
+For files that should not be publicly accessible.
+
+**Storage path:** `storage/app/private`  
+**Configuration location:** `config/filesystems.php:33-39`
+
+```php
+'local' => [
+    'driver' => 'local',
+    'root' => storage_path('app/private'),
+    'serve' => true,
+    'throw' => false,
+],
+```
+
+#### Public Storage
+
+For publicly accessible files like property photos and profile pictures.
+
+**Storage path:** `storage/app/public`  
+**Public URL:** `http://localhost:8000/storage/`  
+**Configuration location:** `config/filesystems.php:41-48`
+
+```php
+'public' => [
+    'driver' => 'local',
+    'root' => storage_path('app/public'),
+    'url' => env('APP_URL').'/storage',
+    'visibility' => 'public',
+],
+```
+
+<Info>
+  ArrendaOco stores property photos and user profile pictures in the `public` disk for direct browser access.
+</Info>
+
+### Creating the Storage Link
+
+Symlink the `storage/app/public` directory to `public/storage`:
+
+```bash
+php artisan storage:link
+```
+
+**Symlink configuration:** `config/filesystems.php:76-78`
+
+```php
+'links' => [
+    public_path('storage') => storage_path('app/public'),
+],
+```
+
+<Warning>
+  You must run `php artisan storage:link` after deployment or uploaded images won't be accessible. This command is safe to run multiple times.
+</Warning>
+
+## File Upload Implementation
+
+ArrendaOco handles file uploads in multiple controllers.
+
+### Property Photos
+
+**Controller:** `app/Http/Controllers/InmuebleController.php`  
+**API Controller:** `app/Http/Controllers/Api/InmuebleController.php`
+
+#### Web Controller Example
+
+**Location:** `InmuebleController.php:376,382,449`
+
+```php
+// Store cover photo
+$pathPortada = $primeraImagen->store('inmuebles', 'public');
+
+// Store additional photos
+foreach ($request->file('fotos') as $foto) {
+    $path = $foto->store('inmuebles', 'public');
+    // Save to inmueble_fotos table
+}
+```
+
+Files are stored in: `storage/app/public/inmuebles/`  
+Accessible at: `http://localhost:8000/storage/inmuebles/filename.jpg`
+
+#### API Controller Example
+
+**Location:** `Api/InmuebleController.php:83,136`
+
+```php
+if ($request->hasFile('fotos')) {
+    foreach ($request->file('fotos') as $file) {
+        $path = $file->store('inmuebles', 'public');
+        $inmueble->fotos()->create(['ruta' => $path]);
+    }
+}
+```
+
+### User Profile Pictures
+
+**Controller:** `app/Http/Controllers/PerfilController.php`  
+**API Controller:** `app/Http/Controllers/Api/PerfilController.php`
+
+#### Web Controller Example
+
+**Location:** `PerfilController.php:41`
+
+```php
+if ($request->hasFile('foto_perfil')) {
+    $path = $request->file('foto_perfil')->store('perfil', 'public');
+    $usuario->foto_perfil = $path;
+}
+```
+
+#### API Controller Example
+
+**Location:** `Api/PerfilController.php:34`
+
+```php
+if ($request->hasFile('foto_perfil')) {
+    $usuario->foto_perfil = $request->file('foto_perfil')
+                                     ->store('perfil', 'public');
+}
+```
+
+Files are stored in: `storage/app/public/perfil/`
+
+## Storage Directory Structure
+
+```
+storage/
+├── app/
+│   ├── private/           # Private files (local disk)
+│   └── public/            # Public files (public disk)
+│       ├── inmuebles/     # Property photos
+│       └── perfil/        # User profile pictures
+├── framework/
+│   ├── cache/
+│   ├── sessions/
+│   ├── testing/
+│   └── views/
+└── logs/
+    └── laravel.log
+
+public/
+└── storage -> ../storage/app/public  # Symlink
+```
+
+## Amazon S3 Configuration (Production)
+
+For production environments, Amazon S3 provides scalable, reliable storage.
+
+### Installation
+
+Install the AWS SDK:
+
+```bash
+composer require league/flysystem-aws-s3-v3 "^3.0"
+```
+
+### Configuration
+
+```env
+FILESYSTEM_DISK=s3
+
+AWS_ACCESS_KEY_ID=your_access_key_id
+AWS_SECRET_ACCESS_KEY=your_secret_access_key
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=arrendaoco-uploads
+AWS_URL=https://arrendaoco-uploads.s3.amazonaws.com
+AWS_USE_PATH_STYLE_ENDPOINT=false
+```
+
+**Configuration location:** `config/filesystems.php:50-61`
+
+```php
+'s3' => [
+    'driver' => 's3',
+    'key' => env('AWS_ACCESS_KEY_ID'),
+    'secret' => env('AWS_SECRET_ACCESS_KEY'),
+    'region' => env('AWS_DEFAULT_REGION'),
+    'bucket' => env('AWS_BUCKET'),
+    'url' => env('AWS_URL'),
+    'endpoint' => env('AWS_ENDPOINT'),
+    'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+],
+```
+
+### S3 Bucket Setup
+
+1. **Create S3 bucket** in AWS Console
+2. **Set bucket policy** for public read access:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::arrendaoco-uploads/*"
+        }
+    ]
+}
+```
+
+3. **Configure CORS** if uploading from browser:
+
+```json
+[
+    {
+        "AllowedHeaders": ["*"],
+        "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
+        "AllowedOrigins": ["https://yourdomain.com"],
+        "ExposeHeaders": []
+    }
+]
+```
+
+4. **Create IAM user** with S3 permissions:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:DeleteObject"
+            ],
+            "Resource": "arn:aws:s3:::arrendaoco-uploads/*"
+        }
+    ]
+}
+```
+
+### Using S3 in Code
+
+No code changes needed! Just change `FILESYSTEM_DISK=s3` in `.env`.
+
+The same `store()` method works:
+
+```php
+$path = $request->file('foto')->store('inmuebles', 's3');
+// File uploaded to S3
+```
+
+## Image Optimization
+
+### Resize Images Before Upload
+
+Install intervention/image:
+
+```bash
+composer require intervention/image
+```
+
+Optimize property photos:
+
+```php
+use Intervention\Image\Facades\Image;
+
+if ($request->hasFile('foto')) {
+    $image = $request->file('foto');
+    
+    // Resize to max 1920px width, maintain aspect ratio
+    $img = Image::make($image)->resize(1920, null, function ($constraint) {
+        $constraint->aspectRatio();
+        $constraint->upsize();
+    });
+    
+    // Optimize quality
+    $img->encode('jpg', 85);
+    
+    // Store
+    $path = $img->store('inmuebles', 'public');
+}
+```
+
+### Generate Thumbnails
+
+```php
+// Original image
+$path = $image->store('inmuebles', 'public');
+
+// Thumbnail
+$thumbnail = Image::make($image)
+    ->fit(300, 200)
+    ->encode('jpg', 80);
+    
+$thumbnailPath = 'inmuebles/thumbnails/' . basename($path);
+Storage::disk('public')->put($thumbnailPath, (string) $thumbnail);
+```
+
+### Lazy Loading Images
+
+In your Blade templates:
+
+```html
+<img src="{{ Storage::url($inmueble->foto_portada) }}" 
+     loading="lazy" 
+     alt="{{ $inmueble->titulo }}">
+```
+
+## File Validation
+
+### Validate Image Uploads
+
+```php
+$request->validate([
+    'foto_portada' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120', // 5MB
+    'fotos.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
+]);
+```
+
+### Allowed File Types
+
+For property documents:
+
+```php
+$request->validate([
+    'documento' => 'required|mimes:pdf,doc,docx|max:10240', // 10MB
+]);
+```
+
+## File Deletion
+
+### Delete Old Files
+
+```php
+use Illuminate\Support\Facades\Storage;
+
+// Delete property photo
+if ($inmueble->foto_portada) {
+    Storage::disk('public')->delete($inmueble->foto_portada);
+}
+
+// Delete all property photos
+foreach ($inmueble->fotos as $foto) {
+    Storage::disk('public')->delete($foto->ruta);
+    $foto->delete(); // Delete database record
+}
+```
+
+### Automatic Cleanup on Model Delete
+
+Add to your Inmueble model:
+
+```php
+protected static function boot()
+{
+    parent::boot();
+    
+    static::deleting(function ($inmueble) {
+        // Delete cover photo
+        if ($inmueble->foto_portada) {
+            Storage::disk('public')->delete($inmueble->foto_portada);
+        }
+        
+        // Delete all photos
+        foreach ($inmueble->fotos as $foto) {
+            Storage::disk('public')->delete($foto->ruta);
+        }
+    });
+}
+```
+
+## Disk Space Management
+
+### Monitor Storage Usage
+
+```php
+// Get disk size
+$size = Storage::disk('public')->size('inmuebles');
+
+// Get all files in directory
+$files = Storage::disk('public')->allFiles('inmuebles');
+
+// Count files
+$count = count($files);
+```
+
+### Clean Old Files
+
+Create artisan command:
+
+```php
+// app/Console/Commands/CleanOldUploads.php
+public function handle()
+{
+    $files = Storage::disk('public')->allFiles('temp');
+    
+    foreach ($files as $file) {
+        $lastModified = Storage::disk('public')->lastModified($file);
+        
+        // Delete files older than 7 days
+        if ($lastModified < now()->subDays(7)->timestamp) {
+            Storage::disk('public')->delete($file);
+        }
+    }
+}
+```
+
+Schedule in `app/Console/Kernel.php`:
+
+```php
+protected function schedule(Schedule $schedule)
+{
+    $schedule->command('uploads:clean')->weekly();
+}
+```
+
+### Set Storage Limits
+
+In your controller:
+
+```php
+// Check user's total upload size
+$userUploads = Storage::disk('public')->allFiles('usuarios/' . $user->id);
+$totalSize = collect($userUploads)->sum(fn($file) => Storage::disk('public')->size($file));
+
+if ($totalSize > 100 * 1024 * 1024) { // 100MB limit
+    return back()->withErrors(['foto' => 'Storage limit exceeded']);
+}
+```
+
+## Handling Property Photos
+
+ArrendaOco stores property photos in the `inmueble_fotos` table.
+
+### Database Schema
+
+```php
+Schema::create('inmueble_fotos', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('inmueble_id')->constrained()->onDelete('cascade');
+    $table->string('ruta'); // storage path
+    $table->integer('orden')->default(0);
+    $table->timestamps();
+});
+```
+
+### Upload Multiple Photos
+
+```php
+if ($request->hasFile('fotos')) {
+    foreach ($request->file('fotos') as $index => $foto) {
+        $path = $foto->store('inmuebles', 'public');
+        
+        $inmueble->fotos()->create([
+            'ruta' => $path,
+            'orden' => $index,
+        ]);
+    }
+}
+```
+
+### Display Photos
+
+```blade
+@foreach($inmueble->fotos as $foto)
+    <img src="{{ Storage::url($foto->ruta) }}" 
+         alt="{{ $inmueble->titulo }}">
+@endforeach
+```
+
+## PDF Generation
+
+ArrendaOco uses dompdf for PDF exports.
+
+**Package:** `barryvdh/laravel-dompdf`  
+**Configuration:** `config/dompdf.php`
+
+### Generate Property Report
+
+```php
+use Barryvdh\DomPDF\Facade\Pdf;
+
+$pdf = Pdf::loadView('pdf.property', ['inmueble' => $inmueble]);
+
+// Download
+return $pdf->download('propiedad-' . $inmueble->id . '.pdf');
+
+// Store to disk
+$path = 'reports/propiedad-' . $inmueble->id . '.pdf';
+Storage::disk('local')->put($path, $pdf->output());
+```
+
+## Security Best Practices
+
+### 1. Validate All Uploads
+
+Always validate file type, size, and mime type:
+
+```php
+$request->validate([
+    'foto' => 'required|image|max:5120|dimensions:min_width=100,min_height=100',
+]);
+```
+
+### 2. Use Unique Filenames
+
+```php
+$filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+$path = $file->storeAs('inmuebles', $filename, 'public');
+```
+
+### 3. Scan for Malware
+
+Consider integrating ClamAV or similar:
+
+```bash
+clamscan uploaded-file.jpg
+```
+
+### 4. Separate Public and Private Storage
+
+- **Public:** Property photos, profile pictures
+- **Private:** User documents, contracts
+
+### 5. Set Proper Permissions
+
+```bash
+chmod -R 755 storage
+chmod -R 775 storage/app
+chmod -R 775 storage/logs
+```
+
+### 6. Use HTTPS for S3 URLs
+
+Always use `https://` for S3 URLs in production.
+
+### 7. Limit Upload Size
+
+In `php.ini`:
+
+```ini
+upload_max_filesize = 10M
+post_max_size = 10M
+```
+
+<Warning>
+  Never trust user-uploaded files. Always validate, sanitize, and store outside the web root when possible.
+</Warning>
+
+## Performance Optimization
+
+### 1. Use CDN for Static Assets
+
+Serve uploaded images through CloudFront, CloudFlare, or similar.
+
+```env
+AWS_URL=https://d123456.cloudfront.net
+```
+
+### 2. Enable Browser Caching
+
+In `.htaccess` (Apache):
+
+```apache
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|svg)$">
+    Header set Cache-Control "max-age=31536000, public"
+</FilesMatch>
+```
+
+### 3. Compress Images
+
+Use tinypng API or similar:
+
+```bash
+composer require tinify/tinify
+```
+
+### 4. Lazy Load Images
+
+Use `loading="lazy"` attribute on `<img>` tags.
+
+### 5. Serve WebP Format
+
+```php
+Image::make($file)
+    ->encode('webp', 85)
+    ->save($path);
+```
+
+## Troubleshooting
+
+### "The file could not be uploaded"
+
+Check PHP upload limits:
+
+```bash
+php -i | grep upload_max_filesize
+php -i | grep post_max_size
+```
+
+Increase in `php.ini`:
+
+```ini
+upload_max_filesize = 20M
+post_max_size = 20M
+```
+
+### "Symlink exists"
+
+```bash
+rm public/storage
+php artisan storage:link
+```
+
+### Images not loading (404)
+
+1. Check symlink exists: `ls -la public/storage`
+2. Run `php artisan storage:link`
+3. Check file exists: `ls storage/app/public/inmuebles/`
+4. Verify permissions: `chmod -R 775 storage`
+
+### "Class 'Intervention\Image\Facades\Image' not found"
+
+```bash
+composer require intervention/image
+```
+
+Add to `config/app.php`:
+
+```php
+'providers' => [
+    Intervention\Image\ImageServiceProvider::class,
+],
+
+'aliases' => [
+    'Image' => Intervention\Image\Facades\Image::class,
+],
+```
+
+### S3 upload fails
+
+1. Verify AWS credentials
+2. Check bucket permissions
+3. Verify region is correct
+4. Test with AWS CLI:
+
+```bash
+aws s3 cp test.jpg s3://arrendaoco-uploads/test.jpg
+```
+
+### Disk full error
+
+Check disk usage:
+
+```bash
+df -h
+du -sh storage/app/public/*
+```
+
+Clean old files or upgrade storage.
+
+## Next Steps
+
+- Configure [Environment Variables](/configuration/environment) for AWS credentials
+- Set up [Mail Configuration](/configuration/mail) for upload notifications
+- Review [Database Configuration](/configuration/database) for file metadata storage

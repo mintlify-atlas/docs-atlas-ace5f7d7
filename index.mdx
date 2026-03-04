@@ -1,97 +1,334 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "ArrendaOco Documentation"
+description: "Complete platform for rental property management in Ocosingo with AI assistance, contracts, and payment tracking"
+mode: "custom"
 ---
 
-## Setting up
+<div className="relative overflow-hidden bg-gradient-to-br from-[#040404] via-[#1a1a1a] to-[#2d2d2d] dark:from-[#040404] dark:via-[#0a0a0a] dark:to-[#1a1a1a] py-20 lg:py-24">
+  <div className="max-w-7xl mx-auto px-6 lg:px-8">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+      <div className="lg:col-span-7">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+          Welcome to ArrendaOco Documentation
+        </h1>
+        <p className="text-base sm:text-lg lg:text-xl text-gray-300 dark:text-gray-400 mb-8 max-w-2xl">
+          Learn how to use ArrendaOco to manage rental properties, create digital contracts, track payments, and leverage AI assistance for your rental business in Ocosingo.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <a
+            href="/quickstart"
+            className="inline-flex items-center justify-center px-6 py-3 text-base font-semibold rounded-lg bg-[#ef370f] hover:bg-[#d63010] text-white transition-colors shadow-lg"
+          >
+            Get Started
+          </a>
+          <a
+            href="/api/auth/login"
+            className="inline-flex items-center justify-center px-6 py-3 text-base font-semibold rounded-lg border border-white/30 bg-white/10 hover:bg-white/20 text-white transition-colors"
+          >
+            API Reference
+          </a>
+        </div>
+      </div>
+      <div className="hidden lg:block lg:col-span-5">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#ef370f]/20 to-[#f79d72]/20 rounded-2xl blur-3xl"></div>
+          <div className="relative bg-[#1a1a1a]/80 dark:bg-[#0f1117]/80 backdrop-blur-sm rounded-2xl border border-[#27272a] dark:border-[#27272a] p-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-[#ef370f]/10 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-[#ef370f]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-400 dark:text-gray-500">Active Properties</p>
+                  <p className="text-2xl font-bold text-white">1,247</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-[#f79d72]/10 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-[#f79d72]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-400 dark:text-gray-500">Digital Contracts</p>
+                  <p className="text-2xl font-bold text-white">892</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-[#040404]/10 border border-[#27272a] flex items-center justify-center">
+                  <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-400 dark:text-gray-500">AI Assistance</p>
+                  <p className="text-2xl font-bold text-white">24/7</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-4">Quick Start</h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">Get up and running with ArrendaOco in minutes</p>
+  
+  <Steps>
+    <Step title="Install and Configure">
+      Clone the repository and install dependencies. ArrendaOco is built with Laravel 12 and Vue 3.
+      
+      ```bash
+      git clone https://github.com/edagrex-sketch/Arrendaoco.git
+      cd Arrendaoco
+      composer install
+      npm install
+      ```
+      
+      Copy the environment file and generate your application key:
+      
+      ```bash
+      cp .env.example .env
+      php artisan key:generate
+      ```
+    </Step>
+    
+    <Step title="Set Up the Database">
+      Configure your database connection in `.env` and run migrations:
+      
+      ```bash
+      php artisan migrate
+      ```
+      
+      <Note>
+        ArrendaOco supports MySQL, PostgreSQL, and SQLite. See the [Database Configuration](/configuration/database) guide for details.
+      </Note>
+    </Step>
+    
+    <Step title="Start the Development Server">
+      Run the development servers for both backend and frontend:
+      
+      ```bash
+      php artisan serve
+      npm run dev
+      ```
+      
+      Your application will be available at `http://localhost:8000`
+    </Step>
+    
+    <Step title="Create Your First User">
+      Register a new user account through the web interface or use the API:
+      
+      ```bash
+      curl -X POST http://localhost:8000/api/register \
+        -H "Content-Type: application/json" \
+        -d '{
+          "nombre": "John Doe",
+          "email": "john@example.com",
+          "password": "securepassword",
+          "password_confirmation": "securepassword"
+        }'
+      ```
+      
+      <Accordion title="Example Response">
+        ```json
+        {
+          "user": {
+            "id": 1,
+            "nombre": "John Doe",
+            "email": "john@example.com",
+            "estatus": "activo",
+            "roles": ["inquilino"]
+          },
+          "token": "1|laravel_sanctum_token_here"
+        }
+        ```
+      </Accordion>
+    </Step>
+  </Steps>
+</div>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-4">Explore by Topic</h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">Deep dive into ArrendaOco's powerful features</p>
+  
+  <CardGroup cols={2}>
     <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+      title="Authentication & Users"
+      icon="user-shield"
+      href="/features/authentication"
+    >
+      Learn about user registration, login, social authentication, and role-based access control
+    </Card>
+    <Card
+      title="Property Management"
+      icon="building"
+      href="/features/properties"
+    >
+      Create, update, and manage property listings with images, maps, and detailed information
+    </Card>
+    <Card
+      title="Digital Contracts"
+      icon="file-contract"
+      href="/features/contracts"
+    >
+      Generate and manage rental contracts with automatic status tracking and PDF exports
+    </Card>
+    <Card
+      title="Payment Processing"
+      icon="credit-card"
+      href="/features/payments"
+    >
+      Track monthly payments, apply late fees, and generate financial statements
+    </Card>
+    <Card
+      title="Reviews & Ratings"
+      icon="star"
+      href="/features/reviews"
+    >
+      Collect tenant feedback and display property ratings to build trust
+    </Card>
+    <Card
+      title="Arrendito AI Assistant"
+      icon="robot"
+      href="/features/arrendito-ai"
+    >
+      Leverage AI-powered chat assistance for property recommendations and support
+    </Card>
+  </CardGroup>
+</div>
 
-## Create beautiful pages
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-4">User Guides</h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">Role-specific guides to help you succeed</p>
+  
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <a href="/guides/tenant-guide" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#ef370f] dark:hover:border-[#ef370f] overflow-hidden no-underline transition-colors">
+      <div className="h-56 bg-gradient-to-br from-[#ef370f]/10 to-[#f79d72]/10 flex items-center justify-center overflow-hidden">
+        <svg className="w-24 h-24 text-[#ef370f] opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+      <div className="p-6 bg-white dark:bg-[#1a1d27]">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Tenant Guide</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Find your perfect rental property, manage favorites, and track your payments</p>
+        <div className="flex items-center text-sm text-[#ef370f] group-hover:text-[#ef370f] font-medium">
+          Read guide
+          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+    
+    <a href="/guides/landlord-guide" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#f79d72] dark:hover:border-[#f79d72] overflow-hidden no-underline transition-colors">
+      <div className="h-56 bg-gradient-to-br from-[#f79d72]/10 to-[#040404]/10 flex items-center justify-center overflow-hidden">
+        <svg className="w-24 h-24 text-[#f79d72] opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      </div>
+      <div className="p-6 bg-white dark:bg-[#1a1d27]">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Landlord Guide</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">List properties, manage contracts, and track rental income effortlessly</p>
+        <div className="flex items-center text-sm text-[#f79d72] group-hover:text-[#f79d72] font-medium">
+          Read guide
+          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+    
+    <a href="/guides/admin-guide" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#040404] dark:hover:border-gray-600 overflow-hidden no-underline transition-colors">
+      <div className="h-56 bg-gradient-to-br from-[#040404]/10 to-gray-300/10 flex items-center justify-center overflow-hidden">
+        <svg className="w-24 h-24 text-[#040404] dark:text-gray-400 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      </div>
+      <div className="p-6 bg-white dark:bg-[#1a1d27]">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Admin Guide</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Manage users, moderate content, and access analytics dashboard</p>
+        <div className="flex items-center text-sm text-[#040404] dark:text-gray-300 group-hover:text-[#040404] dark:group-hover:text-gray-200 font-medium">
+          Read guide
+          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
 
-Everything you need to create world-class documentation.
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-4">API Integration</h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">Build custom integrations with our comprehensive RESTful API</p>
+  
+  <CardGroup cols={3}>
+    <Card
+      title="Authentication"
+      icon="key"
+      href="/api/auth/login"
+    >
+      Secure your API requests with Laravel Sanctum tokens
+    </Card>
+    <Card
+      title="Properties API"
+      icon="building-circle-check"
+      href="/api/properties/list"
+    >
+      Programmatically manage property listings
+    </Card>
+    <Card
+      title="Contracts API"
+      icon="file-signature"
+      href="/api/contracts/list"
+    >
+      Create and manage rental agreements
+    </Card>
+    <Card
+      title="Payments API"
+      icon="wallet"
+      href="/api/payments/pending"
+    >
+      Process payments and track transactions
+    </Card>
+    <Card
+      title="Reviews API"
+      icon="comment-dots"
+      href="/api/reviews/list"
+    >
+      Manage property reviews and ratings
+    </Card>
+    <Card
+      title="AI Chat API"
+      icon="brain"
+      href="/api/arrendito/chat"
+    >
+      Integrate Arrendito AI assistant
+    </Card>
+  </CardGroup>
+</div>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<div className="mt-20 mb-16 max-w-5xl mx-auto px-6">
+  <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#040404] to-[#1a1a1a] dark:from-[#0f1117] dark:to-[#1a1d27] border border-[#27272a] p-8 sm:p-12">
+    <div className="relative z-10">
+      <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">Ready to get started?</h2>
+      <p className="text-base sm:text-lg text-gray-300 dark:text-gray-400 mb-8 max-w-2xl">
+        Follow our quickstart guide to set up ArrendaOco and start managing rental properties with AI-powered assistance.
+      </p>
+      <a
+        href="/quickstart"
+        className="inline-flex items-center justify-center px-6 py-3 text-base font-semibold rounded-lg bg-[#ef370f] hover:bg-[#d63010] text-white transition-colors shadow-lg"
+      >
+        Get Started Now
+      </a>
+    </div>
+    <div className="absolute top-0 right-0 w-64 h-64 bg-[#ef370f]/10 rounded-full blur-3xl"></div>
+    <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#f79d72]/10 rounded-full blur-3xl"></div>
+  </div>
+</div>

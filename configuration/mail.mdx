@@ -1,0 +1,546 @@
+---
+title: Mail Configuration
+description: Configure email delivery for password resets, notifications, and user communications in ArrendaOco
+---
+
+## Overview
+
+ArrendaOco uses Laravel's mail system to send:
+- Password reset emails
+- Reservation confirmations
+- Review notifications
+- Admin notifications
+- User welcome emails
+
+## Mail Configuration
+
+All mail settings are configured in `.env` and read by `config/mail.php`.
+
+**Default mailer:** `log` (writes emails to log files)
+**Configuration location:** `config/mail.php:17`
+
+## Available Mail Drivers
+
+ArrendaOco supports multiple mail drivers:
+
+| Driver | Use Case | Cost |
+|--------|----------|------|
+| `log` | Development/Testing | Free |
+| `smtp` | General purpose | Varies |
+| `mailgun` | High volume | Paid |
+| `ses` | AWS users | Paid |
+| `postmark` | Transactional emails | Paid |
+| `resend` | Modern alternative | Paid |
+| `sendmail` | Server with sendmail | Free |
+| `array` | Testing (memory only) | Free |
+
+## Development Setup (Log Driver)
+
+Perfect for local development. Emails are written to `storage/logs/laravel.log`.
+
+```env
+MAIL_MAILER=log
+MAIL_FROM_ADDRESS=hello@arrendaoco.com
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+**Configuration location:** `config/mail.php:73-76`
+
+<Info>
+  This is the default configuration in ArrendaOco. You can test password resets and notifications without configuring a real mail server.
+</Info>
+
+### Viewing Logged Emails
+
+```bash
+# View recent emails
+tail -f storage/logs/laravel.log
+
+# Search for specific email
+grep -A 20 "Mail" storage/logs/laravel.log
+```
+
+## SMTP Configuration (Production)
+
+Recommended for production environments.
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-specific-password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=noreply@arrendaoco.com
+MAIL_FROM_NAME="ArrendaOco"
+```
+
+**Configuration location:** `config/mail.php:40-50`
+
+### SMTP Options
+
+| Variable | Description | Common Values |
+|----------|-------------|---------------|
+| `MAIL_HOST` | SMTP server address | `smtp.gmail.com`, `smtp.mailtrap.io` |
+| `MAIL_PORT` | SMTP port | `587` (TLS), `465` (SSL), `25` |
+| `MAIL_USERNAME` | SMTP username | Usually your email address |
+| `MAIL_PASSWORD` | SMTP password | App-specific password |
+| `MAIL_ENCRYPTION` | Encryption method | `tls`, `ssl`, `null` |
+| `MAIL_FROM_ADDRESS` | Default sender email | `noreply@arrendaoco.com` |
+| `MAIL_FROM_NAME` | Default sender name | `ArrendaOco` |
+
+### Common SMTP Providers
+
+#### Gmail
+
+```env
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_ENCRYPTION=tls
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+```
+
+<Warning>
+  Gmail requires an [App Password](https://support.google.com/accounts/answer/185833) instead of your regular password. Enable 2FA first, then generate an app password.
+</Warning>
+
+#### Mailtrap (Development)
+
+Perfect for testing emails without sending to real addresses.
+
+```env
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=your-mailtrap-username
+MAIL_PASSWORD=your-mailtrap-password
+MAIL_ENCRYPTION=tls
+```
+
+Get credentials from [Mailtrap.io](https://mailtrap.io)
+
+#### SendGrid
+
+```env
+MAIL_HOST=smtp.sendgrid.net
+MAIL_PORT=587
+MAIL_USERNAME=apikey
+MAIL_PASSWORD=your-sendgrid-api-key
+MAIL_ENCRYPTION=tls
+```
+
+#### Mailgun
+
+```env
+MAIL_MAILER=mailgun
+MAILGUN_DOMAIN=your-domain.com
+MAILGUN_SECRET=your-mailgun-secret
+MAILGUN_ENDPOINT=api.mailgun.net
+```
+
+#### Amazon SES
+
+```env
+MAIL_MAILER=ses
+AWS_ACCESS_KEY_ID=your-aws-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret
+AWS_DEFAULT_REGION=us-east-1
+```
+
+**Configuration location:** `config/services.php:25-29`
+
+#### Postmark
+
+```env
+MAIL_MAILER=postmark
+POSTMARK_TOKEN=your-postmark-token
+```
+
+**Configuration location:** `config/mail.php:56-62`
+
+#### Resend
+
+```env
+MAIL_MAILER=resend
+RESEND_KEY=your-resend-api-key
+```
+
+**Configuration location:** `config/mail.php:64-66`
+
+## Testing Email Configuration
+
+### Send Test Email
+
+Create a test route or use tinker:
+
+```bash
+php artisan tinker
+```
+
+```php
+use Illuminate\Support\Facades\Mail;
+
+Mail::raw('This is a test email from ArrendaOco', function ($message) {
+    $message->to('test@example.com')
+            ->subject('Test Email');
+});
+```
+
+### Using Artisan Tinker
+
+```php
+// Send a password reset email to test
+$user = App\Models\Usuario::first();
+$user->sendPasswordResetNotification(
+    app('auth.password.broker')->createToken($user)
+);
+```
+
+## Email Templates
+
+ArrendaOco email templates are located in:
+- `resources/views/emails/` - Custom email views
+- Laravel notifications use default templates
+
+### Customizing Email Templates
+
+Publish Laravel's mail templates:
+
+```bash
+php artisan vendor:publish --tag=laravel-mail
+```
+
+Templates will be copied to `resources/views/vendor/mail/`.
+
+## Password Reset Emails
+
+Password reset configuration is in `config/auth.php`:
+
+**Configuration location:** `config/auth.php:93-100`
+
+```php
+'passwords' => [
+    'users' => [
+        'provider' => 'users',
+        'table' => 'password_reset_tokens',
+        'expire' => 60,  // 60 minutes
+        'throttle' => 60, // 60 seconds between requests
+    ],
+],
+```
+
+### Token Expiration
+
+```env
+AUTH_PASSWORD_RESET_TOKEN_TABLE=password_reset_tokens
+```
+
+Password reset tokens expire after 60 minutes by default.
+
+## Notification Emails
+
+### Global From Address
+
+Set in `.env`:
+
+```env
+MAIL_FROM_ADDRESS=noreply@arrendaoco.com
+MAIL_FROM_NAME="ArrendaOco Platform"
+```
+
+**Configuration location:** `config/mail.php:113-116`
+
+This address is used for all outgoing emails unless overridden in the mailable/notification.
+
+### Queue Emails for Better Performance
+
+In production, queue emails to avoid blocking requests:
+
+```php
+// In your notification class
+public function via($notifiable)
+{
+    return ['mail'];
+}
+
+public function toMail($notifiable)
+{
+    return (new MailMessage)
+        ->subject('Property Reservation Confirmed')
+        ->line('Your reservation has been confirmed!')
+        ->action('View Reservation', url('/reservations'));
+}
+```
+
+Make notification queueable:
+
+```php
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class ReservationConfirmed extends Notification implements ShouldQueue
+{
+    // ...
+}
+```
+
+## Advanced Configuration
+
+### Multiple Mail Drivers (Failover)
+
+Use failover to automatically switch between drivers if one fails:
+
+```env
+MAIL_MAILER=failover
+```
+
+**Configuration location:** `config/mail.php:82-89`
+
+```php
+'failover' => [
+    'transport' => 'failover',
+    'mailers' => [
+        'smtp',      // Try SMTP first
+        'log',       // Fall back to log
+    ],
+    'retry_after' => 60, // Wait 60 seconds before retrying failed driver
+],
+```
+
+### Round Robin (Load Balancing)
+
+Distribute emails across multiple providers:
+
+**Configuration location:** `config/mail.php:91-98`
+
+```php
+'roundrobin' => [
+    'transport' => 'roundrobin',
+    'mailers' => [
+        'ses',
+        'postmark',
+    ],
+    'retry_after' => 60,
+],
+```
+
+### Custom Mail Channel
+
+Log mails to specific channel:
+
+```env
+MAIL_LOG_CHANNEL=mail
+```
+
+Configure the channel in `config/logging.php`.
+
+### Local Domain (EHLO)
+
+```env
+MAIL_EHLO_DOMAIN=arrendaoco.com
+```
+
+Used during SMTP handshake. Defaults to your `APP_URL` hostname.
+
+## Production Best Practices
+
+### 1. Use Dedicated Mail Service
+
+Don't rely on shared hosting SMTP. Use:
+- Mailgun (recommended for Laravel)
+- Amazon SES (cost-effective)
+- SendGrid (reliable)
+- Postmark (transactional emails)
+
+### 2. Configure SPF Records
+
+Add to your DNS:
+
+```
+v=spf1 include:_spf.google.com ~all
+```
+
+### 3. Configure DKIM
+
+Most email services provide DKIM records. Add them to DNS.
+
+### 4. Set Up DMARC
+
+```
+_dmarc.yourdomain.com TXT "v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com"
+```
+
+### 5. Use Queue for Emails
+
+Always queue emails in production:
+
+```bash
+# Start queue worker
+php artisan queue:work --tries=3
+```
+
+Monitor with Supervisor or systemd.
+
+### 6. Monitor Email Deliverability
+
+Track:
+- Bounce rates
+- Spam complaints
+- Open rates (if using tracking)
+
+### 7. Set Proper From Address
+
+```env
+MAIL_FROM_ADDRESS=noreply@yourdomain.com
+MAIL_FROM_NAME="ArrendaOco"
+```
+
+Use a real domain you own, not `@gmail.com`.
+
+## Troubleshooting
+
+### Emails Not Sending
+
+1. **Check mail driver:**
+   ```bash
+   php artisan config:clear
+   php artisan config:cache
+   ```
+
+2. **Test connectivity:**
+   ```bash
+   telnet smtp.gmail.com 587
+   ```
+
+3. **Check logs:**
+   ```bash
+   tail -f storage/logs/laravel.log
+   ```
+
+4. **Verify queue is running:**
+   ```bash
+   php artisan queue:work
+   ```
+
+### "Connection refused"
+
+- Check firewall allows outbound connections on port 587/465
+- Verify SMTP credentials
+- Check if your host blocks SMTP
+
+### "Authentication failed"
+
+- Use app-specific password (Gmail, Yahoo)
+- Check username is correct (often full email)
+- Verify password has no special characters that need escaping
+
+### "SSL certificate problem"
+
+```env
+# Disable SSL verification (development only)
+MAIL_ENCRYPTION=null
+```
+
+<Warning>
+  Never disable SSL verification in production. Fix the certificate issue instead.
+</Warning>
+
+### Emails Going to Spam
+
+1. Set up SPF, DKIM, and DMARC records
+2. Use a reputable email service
+3. Avoid spam trigger words
+4. Include unsubscribe link
+5. Send from a real domain you own
+6. Warm up new sending domains gradually
+
+### Queue Worker Not Processing Emails
+
+```bash
+# Check failed jobs
+php artisan queue:failed
+
+# Retry failed jobs
+php artisan queue:retry all
+
+# Restart queue worker
+php artisan queue:restart
+```
+
+### Testing Mail in Staging
+
+```env
+# Use Mailtrap in staging
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+```
+
+Or override recipient in development:
+
+```php
+// In AppServiceProvider
+if (app()->environment('local', 'staging')) {
+    Mail::alwaysTo('developer@example.com');
+}
+```
+
+## Email Security
+
+### Prevent Email Header Injection
+
+Laravel validates email addresses automatically, but always validate user input:
+
+```php
+$validated = $request->validate([
+    'email' => 'required|email:rfc,dns',
+]);
+```
+
+### Rate Limiting Password Resets
+
+Configured in `config/auth.php:98`:
+
+```php
+'throttle' => 60, // 60 seconds between reset requests
+```
+
+### Encrypt Sensitive Email Content
+
+For highly sensitive emails:
+
+```php
+use Illuminate\Support\Facades\Crypt;
+
+$encrypted = Crypt::encryptString($sensitiveData);
+```
+
+## Performance Optimization
+
+### Always Queue Emails in Production
+
+```bash
+# In .env
+QUEUE_CONNECTION=redis
+
+# Start worker
+php artisan queue:work redis --tries=3 --timeout=60
+```
+
+### Batch Email Sending
+
+For newsletters or bulk emails:
+
+```php
+Notification::send($users, new PropertyAlert($inmueble));
+```
+
+### Monitor Queue Size
+
+```bash
+php artisan queue:monitor redis:default,redis:emails --max=100
+```
+
+## Next Steps
+
+- Configure [Storage](/configuration/storage) for email attachments
+- Set up [Environment Variables](/configuration/environment) for mail credentials
+- Review [Database Configuration](/configuration/database) for queue tables

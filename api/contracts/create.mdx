@@ -1,0 +1,236 @@
+---
+title: "Create Contract"
+api: "POST /api/inmuebles/{id}/rentar"
+description: "Create a new rental contract for a property"
+---
+
+## Overview
+
+Initiates a rental contract between a property owner and a tenant. This endpoint automatically:
+- Creates the contract record
+- Updates the property status to `rentado` (rented)
+- Validates ownership and availability
+
+<Warning>
+  Only the property owner can create rental contracts. The property must have status `disponible` (available).
+</Warning>
+
+## Authentication
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for authentication
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The property ID to rent out
+</ParamField>
+
+## Request Body
+
+<ParamField body="inquilino_id" type="integer" required>
+  The tenant's user ID. Must be a valid user and cannot be the property owner.
+</ParamField>
+
+<ParamField body="fecha_inicio" type="date" required>
+  Contract start date in format `YYYY-MM-DD`
+</ParamField>
+
+<ParamField body="fecha_fin" type="date">
+  Contract end date in format `YYYY-MM-DD`. Must be after `fecha_inicio`. Leave null for indefinite contracts.
+</ParamField>
+
+<ParamField body="renta_mensual" type="decimal" required>
+  Monthly rent amount. Must be >= 0.
+</ParamField>
+
+<ParamField body="deposito" type="decimal">
+  Security deposit amount. Must be >= 0 if provided.
+</ParamField>
+
+## Request Example
+
+```json
+{
+  "inquilino_id": 42,
+  "fecha_inicio": "2026-04-01",
+  "fecha_fin": "2027-04-01",
+  "renta_mensual": 18000.00,
+  "deposito": 36000.00
+}
+```
+
+## Response
+
+<ResponseField name="id" type="integer">
+  Newly created contract ID
+</ResponseField>
+
+<ResponseField name="inmueble_id" type="integer">
+  Property ID
+</ResponseField>
+
+<ResponseField name="propietario_id" type="integer">
+  Landlord user ID (authenticated user)
+</ResponseField>
+
+<ResponseField name="inquilino_id" type="integer">
+  Tenant user ID
+</ResponseField>
+
+<ResponseField name="fecha_inicio" type="date">
+  Contract start date
+</ResponseField>
+
+<ResponseField name="fecha_fin" type="date" nullable>
+  Contract end date
+</ResponseField>
+
+<ResponseField name="renta_mensual" type="decimal">
+  Monthly rent amount
+</ResponseField>
+
+<ResponseField name="deposito" type="decimal" nullable>
+  Security deposit
+</ResponseField>
+
+<ResponseField name="estatus" type="string">
+  Contract status (always `activo` on creation)
+</ResponseField>
+
+<ResponseField name="created_at" type="timestamp">
+  Creation timestamp
+</ResponseField>
+
+<ResponseField name="updated_at" type="timestamp">
+  Last update timestamp
+</ResponseField>
+
+## Response Example
+
+```json
+{
+  "id": 15,
+  "inmueble_id": 7,
+  "propietario_id": 3,
+  "inquilino_id": 42,
+  "fecha_inicio": "2026-04-01",
+  "fecha_fin": "2027-04-01",
+  "renta_mensual": 18000.00,
+  "deposito": 36000.00,
+  "estatus": "activo",
+  "created_at": "2026-03-04T15:30:00.000000Z",
+  "updated_at": "2026-03-04T15:30:00.000000Z"
+}
+```
+
+## Validation Rules
+
+### Ownership Validation
+
+```php
+if ($inmueble->propietario_id !== $request->user()->id) {
+    abort(403, 'Solo el propietario puede rentar este inmueble');
+}
+```
+
+Only the property owner can create rental contracts.
+
+### Availability Check
+
+```php
+if ($inmueble->estatus !== 'disponible') {
+    abort(422, 'El inmueble no está disponible');
+}
+```
+
+Property must have status `disponible` to be rented.
+
+### Self-Rental Prevention
+
+```php
+if ($data['inquilino_id'] == $request->user()->id) {
+    abort(422, 'El propietario no puede ser el inquilino');
+}
+```
+
+Property owners cannot rent to themselves.
+
+## Database Transaction
+
+The contract creation is wrapped in a database transaction to ensure atomicity:
+
+1. Create contract record with status `activo`
+2. Update property status to `rentado`
+
+If either operation fails, both are rolled back.
+
+## Error Responses
+
+<ResponseField name="403 Forbidden">
+  User is not the property owner
+  ```json
+  {
+    "message": "Solo el propietario puede rentar este inmueble"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="422 Unprocessable Entity">
+  Property not available or validation failed
+  ```json
+  {
+    "message": "El inmueble no está disponible"
+  }
+  ```
+  
+  or
+  
+  ```json
+  {
+    "message": "El propietario no puede ser el inquilino"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="404 Not Found">
+  Property does not exist
+  ```json
+  {
+    "message": "No query results for model [App\\Models\\Inmueble]."
+  }
+  ```
+</ResponseField>
+
+## Next Steps
+
+After creating a contract, you typically want to:
+
+1. **Generate payment schedule** using [POST /api/contratos/{id}/pagos/generar](/api/payments/generate)
+2. **View contract details** using [GET /api/contratos](/api/contracts/list)
+3. **Check payment status** using [GET /api/contratos/{id}/estado-cuenta](/api/contracts/statement)
+
+## Payment Generation
+
+<Info>
+  Contracts do not automatically generate payment records. Use the [Generate Payments](/api/payments/generate) endpoint to create a payment schedule.
+</Info>
+
+Example:
+
+```bash
+POST /api/contratos/15/pagos/generar
+{
+  "meses": 12
+}
+```
+
+This creates 12 monthly payment records starting from the contract's `fecha_inicio`.
+
+## Source Reference
+
+- Controller: `app/Http/Controllers/Api/ContratoController.php:59`
+- Route: `routes/api.php:76`
+- Model: `app/Models/Contrato.php`
+- Migration: `database/migrations/2026_01_25_193638_create_contratos_table.php`
