@@ -1,0 +1,152 @@
+{
+  "projectType": "saas",
+  "projectName": "ArrendaOco",
+  "projectDescription": "Property rental management platform for Ocosingo with AI assistance, contracts, and payment tracking",
+  "theme": "almond",
+  "primaryColor": "#040404",
+  "lightColor": "#ef370f",
+  "darkColor": "#f79d72",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/authentication",
+              "features/properties",
+              "features/contracts",
+              "features/payments",
+              "features/reviews",
+              "features/favorites",
+              "features/arrendito-ai"
+            ]
+          },
+          {
+            "group": "User Guides",
+            "pages": [
+              "guides/tenant-guide",
+              "guides/landlord-guide",
+              "guides/admin-guide"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/environment",
+              "configuration/database",
+              "configuration/mail",
+              "configuration/storage"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Authentication",
+            "pages": [
+              "api/auth/login",
+              "api/auth/register",
+              "api/auth/logout"
+            ]
+          },
+          {
+            "group": "Properties",
+            "pages": [
+              "api/properties/list",
+              "api/properties/create",
+              "api/properties/update",
+              "api/properties/delete",
+              "api/properties/search"
+            ]
+          },
+          {
+            "group": "Contracts",
+            "pages": [
+              "api/contracts/list",
+              "api/contracts/create",
+              "api/contracts/renew",
+              "api/contracts/cancel",
+              "api/contracts/statement"
+            ]
+          },
+          {
+            "group": "Payments",
+            "pages": [
+              "api/payments/pending",
+              "api/payments/generate",
+              "api/payments/process"
+            ]
+          },
+          {
+            "group": "Reviews",
+            "pages": [
+              "api/reviews/list",
+              "api/reviews/create",
+              "api/reviews/update",
+              "api/reviews/delete"
+            ]
+          },
+          {
+            "group": "Favorites",
+            "pages": [
+              "api/favorites/list",
+              "api/favorites/toggle"
+            ]
+          },
+          {
+            "group": "Arrendito AI",
+            "pages": [
+              "api/arrendito/chat"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "User authentication with social login (Google)",
+    "Property listing and management with images and maps",
+    "Digital rental contracts with PDF generation",
+    "Automated monthly payment tracking with late fees",
+    "Property reviews and ratings system",
+    "Favorites/wishlist for properties",
+    "AI chatbot assistant (Arrendito) powered by Gemini 2.0",
+    "Admin dashboard with reports and analytics",
+    "Role-based access control (Tenant, Landlord, Admin)",
+    "RESTful API with Laravel Sanctum authentication",
+    "Excel and PDF export for financial statements",
+    "Notification system for payments and events",
+    "Calendar integration for rental events"
+  ],
+  "publicApiSurface": [
+    "POST /api/login - User authentication",
+    "POST /api/register - User registration",
+    "GET /api/inmuebles/public-list - List available properties",
+    "GET /api/inmuebles/public-detail/{id} - Property details",
+    "POST /api/inmuebles - Create property (auth)",
+    "PUT /api/inmuebles/{id} - Update property (auth)",
+    "DELETE /api/inmuebles/{id} - Delete property (auth)",
+    "GET /api/contratos - List user contracts (auth)",
+    "POST /api/inmuebles/{id}/rentar - Create rental contract (auth)",
+    "GET /api/contratos/{id}/estado-cuenta - Financial statement (auth)",
+    "GET /api/pagos/pendientes - List pending payments (auth)",
+    "POST /api/pagos/{id}/pagar - Process payment (auth)",
+    "POST /api/inmuebles/{id}/resenas - Create review (auth)",
+    "GET /api/favoritos - List favorites (auth)",
+    "POST /api/favoritos/{id}/toggle - Toggle favorite (auth)",
+    "POST /api/arrendito/chat - Chat with AI assistant",
+    "GET /api/reportes/ingresos - Revenue reports (auth)"
+  ]
+}
